@@ -7,3 +7,12 @@ How to Run
 3. Enter "venv\Scripts\activate"
 4. pip install Flask flask-cors Flask-SQLAlchemy pymysql
 
+How to create db
+Enter the ff:
+1. python
+2. from app import app, db
+3. app.app_context().push(); db.create_all()
+Optional:
+4. db.inspect(db.engine).get_table_names() # To Check
+5. Exit()
+
