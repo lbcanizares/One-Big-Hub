@@ -15,9 +15,8 @@ db = SQLAlchemy(app)
 
 # Test Route
 app.route('/test', methods=['GET'])
-def test_route():
-    return jsonify({'message': 'Test route is working!'}), 200
+def home():
+    return jsonify({"Status": "Success", "message": 'Connected to One Big Hub!'}), 200
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
-
