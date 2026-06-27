@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
+import { useNavigate } from 'react-router-dom'
 
 function HomePage() {
   const { token } = useAuth()
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('')
+  const navigate = useNavigate()
 
   useEffect(() => {
     fetchListings()
@@ -63,7 +65,7 @@ function HomePage() {
         ) : (
           <div style={styles.grid}>
             {listings.map(listing => (
-              <div key={listing.id} style={styles.card}>
+              <div key={listing.id} style={styles.card} onClick={() => navigate(`/listing/${listing.id}`)}>
                 <div style={styles.imageBox}>
                   {listing.image_url ? (
                     <img src={listing.image_url} alt={listing.title} style={styles.image} />

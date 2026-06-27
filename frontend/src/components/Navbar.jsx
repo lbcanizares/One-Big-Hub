@@ -20,12 +20,16 @@ function Navbar() {
           <>
             <span style={styles.welcome}>Hi, {user.name.split(' ')[0]}!</span>
             <Link to="/" style={styles.link}>Browse</Link>
+            <Link to="/post" style={styles.postBtn}>+ Post</Link>
+            <Link to="/chat" style={styles.link}>Chat</Link>
+            <Link to="/profile" style={styles.link}>Profile</Link>
             <button onClick={handleLogout} style={styles.logoutBtn}>Logout</button>
           </>
         ) : (
           <>
             <Link to="/login" style={styles.link}>Login</Link>
             <Link to="/register" style={styles.link}>Register</Link>
+        
           </>
         )}
       </div>
@@ -61,6 +65,14 @@ const styles = {
     fontSize: '14px',
     color: '#e0deff',
   },
+  postBtn: {
+    background: 'white',
+    color: '#534AB7',
+    padding: '6px 14px',
+    borderRadius: '99px',
+    fontSize: '13px',
+    fontWeight: '600',
+  },
   logoutBtn: {
     background: 'white',
     color: '#534AB7',
@@ -69,7 +81,7 @@ const styles = {
     borderRadius: '99px',
     fontSize: '13px',
     fontWeight: '500',
-  }
+  },
 }
 
 export default Navbar
