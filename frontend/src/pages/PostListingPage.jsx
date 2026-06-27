@@ -20,6 +20,8 @@ function PostListingPage() {
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [photo, setPhoto] = useState(null)
+  const [photoPreview, setPhotoPreview] = useState(null)
 
   const categories = ['Books & Notes', 'Electronics', 'Uniforms', 'Food', 'Dorm Stuff', 'Services', 'Others']
   const conditions = ['Brand New', 'Like New', 'Good', 'Fair', 'Poor']
@@ -28,14 +30,31 @@ function PostListingPage() {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
+  const handlePhoto = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setPhoto(file)
+      setPhotoPreview(URL.createObjectURL(file))
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setLoading(true)
     try {
-      await axios.post('http://127.0.0.1:5000/api/listings/', form, {
+      const res = await axios.post('http://127.0.0.1:5000/api/listings/', form, {
         headers: { Authorization: `Bearer ${token}` }
       })
+      if (photo) {
+        const formData = new FormData()
+        formData.append('photo', photo)
+        await axios.post(
+          `http://127.0.0.1:5000/api/listings/${res.data.id}/photos`,
+          formData,
+          { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
+        )
+      }
       navigate('/')
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to post listing')
@@ -55,6 +74,19 @@ function PostListingPage() {
           {error && <div style={styles.error}>{error}</div>}
 
           <form onSubmit={handleSubmit} style={styles.form}>
+
+            <div style={styles.field}>
+              <label style={styles.label}>Photo</label>
+              <input type="file" accept="image/*" onChange={handlePhoto} style={styles.input} />
+              {photoPreview && (
+                <img
+                  src={photoPreview}
+                  alt="preview"
+                  style={{ width: '100%', borderRadius: '8px', marginTop: '8px', maxHeight: '200px', objectFit: 'cover' }}
+                />
+              )}
+            </div>
+
             <div style={styles.field}>
               <label style={styles.label}>Title</label>
               <input

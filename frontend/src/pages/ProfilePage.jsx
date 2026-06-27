@@ -10,6 +10,7 @@ function ProfilePage() {
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('active')
+  const [savedListings, setSavedListings] = useState([])
 
   useEffect(() => {
     fetchMyListings()
@@ -28,6 +29,17 @@ function ProfilePage() {
       setLoading(false)
     }
   }
+  const fetchSaved = async () => {
+  try {
+    const res = await axios.get('http://127.0.0.1:5000/api/listings/saved', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    setSavedListings(res.data.listings)
+  } catch (err) {
+    console.error(err)
+  }
+}
+fetchSaved()
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this listing?')) return
@@ -55,7 +67,7 @@ function ProfilePage() {
 
   const activeListings = listings.filter(l => l.status === 'Available')
   const soldListings = listings.filter(l => l.status !== 'Available')
-  const displayedListings = activeTab === 'active' ? activeListings : soldListings
+  const displayedListings = activeTab === 'active' ? activeListings : activeTab == 'sold' ? soldListings : savedListings
 
   const badgeColors = { sell: '#534AB7', rent: '#EF9F27', trade: '#4CAF50', free: '#888' }
 
@@ -101,6 +113,12 @@ function ProfilePage() {
             Sold / Done ({soldListings.length})
           </button>
         </div>
+        <button
+            onClick={() => setActiveTab('saved')}
+             style={{ ...styles.tab, ...(activeTab === 'saved' ? styles.tabActive : {}) }}
+          >
+             Saved ({savedListings.length})
+          </button>
 
         {/* Listings grid */}
         {loading ? (

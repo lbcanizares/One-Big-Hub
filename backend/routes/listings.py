@@ -1,15 +1,24 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_from_directory
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from extensions import db
-from models import Listing
+from models import Listing, ListingPhoto, SavedListing
+import os
+from werkzeug.utils import secure_filename
 
 listings_bp = Blueprint('listings', __name__)
+
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @listings_bp.route('/', methods=['GET'])
 def get_listings():
     transaction_type = request.args.get('type')
     category = request.args.get('category')
+    search = request.args.get('search')
 
     query = Listing.query.filter_by(status='Available')
 
@@ -17,6 +26,8 @@ def get_listings():
         query = query.filter_by(transaction_type=transaction_type)
     if category:
         query = query.filter_by(category=category)
+    if search:
+        query = query.filter(Listing.title.ilike(f'%{search}%'))
 
     listings = query.order_by(Listing.created_at.desc()).all()
 
@@ -38,6 +49,24 @@ def get_listings():
             "seller": {"id": l.owner.id, "name": l.owner.name},
             "created_at": l.created_at.isoformat()
         } for l in listings]
+    }), 200
+
+
+@listings_bp.route('/saved', methods=['GET'])
+@jwt_required()
+def get_saved():
+    user_id = int(get_jwt_identity())
+    saved = SavedListing.query.filter_by(user_id=user_id).all()
+    return jsonify({
+        "status": "success",
+        "listings": [{
+            "id": s.listing.id,
+            "title": s.listing.title,
+            "price": float(s.listing.price) if s.listing.price else None,
+            "transaction_type": s.listing.transaction_type,
+            "image_url": s.listing.photos[0].photo_url if s.listing.photos else None,
+            "seller": {"id": s.listing.owner.id, "name": s.listing.owner.name},
+        } for s in saved]
     }), 200
 
 
@@ -132,3 +161,53 @@ def delete_listing(listing_id):
     db.session.delete(l)
     db.session.commit()
     return jsonify({"status": "success", "message": "Listing deleted"}), 200
+
+
+@listings_bp.route('/<int:listing_id>/save', methods=['POST'])
+@jwt_required()
+def save_listing(listing_id):
+    user_id = int(get_jwt_identity())
+    existing = SavedListing.query.filter_by(user_id=user_id, listing_id=listing_id).first()
+    if existing:
+        db.session.delete(existing)
+        db.session.commit()
+        return jsonify({"status": "success", "saved": False}), 200
+    saved = SavedListing(user_id=user_id, listing_id=listing_id)
+    db.session.add(saved)
+    db.session.commit()
+    return jsonify({"status": "success", "saved": True}), 201
+
+
+@listings_bp.route('/<int:listing_id>/photos', methods=['POST'])
+@jwt_required()
+def upload_photo(listing_id):
+    user_id = get_jwt_identity()
+    listing = Listing.query.get_or_404(listing_id)
+
+    if str(listing.user_id) != str(user_id):
+        return jsonify({"status": "error", "message": "Unauthorized"}), 403
+
+    if 'photo' not in request.files:
+        return jsonify({"status": "error", "message": "No photo provided"}), 400
+
+    file = request.files['photo']
+    if file and allowed_file(file.filename):
+        filename = secure_filename(f"{listing_id}_{file.filename}")
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+        file.save(os.path.join(UPLOAD_FOLDER, filename))
+
+        photo = ListingPhoto(
+            listing_id=listing_id,
+            photo_url=f'http://127.0.0.1:5000/uploads/{filename}'
+        )
+        db.session.add(photo)
+        db.session.commit()
+
+        return jsonify({"status": "success", "photo_url": photo.photo_url}), 201
+
+    return jsonify({"status": "error", "message": "Invalid file type"}), 400
+
+
+@listings_bp.route('/uploads/<filename>')
+def serve_upload(filename):
+    return send_from_directory('uploads', filename)

@@ -15,6 +15,7 @@ function ListingDetailPage() {
   const [showOffer, setShowOffer] = useState(false)
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
+  const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     fetchListing()
@@ -56,6 +57,19 @@ function ListingDetailPage() {
       setError('Failed to send offer')
     }
   }
+
+  const handleSave = async () => {
+    try {
+    const res = await axios.post(
+      `http://127.0.0.1:5000/api/listings/${listing.id}/save`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    )
+    setSaved(res.data.saved)
+  } catch (err) {
+    console.error(err)
+  }
+}
 
   if (loading) return <div><Navbar /><div style={styles.center}>Loading...</div></div>
   if (!listing) return <div><Navbar /><div style={styles.center}>Listing not found.</div></div>
@@ -414,6 +428,14 @@ const styles = {
     borderRadius: '8px',
     fontSize: '13px',
   },
+  saveBtn: {
+    padding: '6px 14px',
+    borderRadius: '99px',
+    border: '1px solid #ddd',
+    background: 'white',
+    fontSize: '13px',
+    cursor: 'pointer',
+    },
   center: {
     textAlign: 'center',
     padding: '60px',

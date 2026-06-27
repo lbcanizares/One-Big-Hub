@@ -9,6 +9,7 @@ function HomePage() {
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('')
+  const [search, setSearch] = useState('')
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -16,19 +17,19 @@ function HomePage() {
   }, [filter])
 
   const fetchListings = async () => {
-    setLoading(true)
-    try {
-      const url = filter
-        ? `http://127.0.0.1:5000/api/listings/?type=${filter}`
-        : 'http://127.0.0.1:5000/api/listings/'
-      const res = await axios.get(url)
-      setListings(res.data.listings)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
+  setLoading(true)
+  try {
+    let url = 'http://127.0.0.1:5000/api/listings/?'
+    if (filter) url += `type=${filter}&`
+    if (search) url += `search=${search}&`
+    const res = await axios.get(url)
+    setListings(res.data.listings)
+  } catch (err) {
+    console.error(err)
+  } finally {
+    setLoading(false)
   }
+}
 
   const filters = ['', 'sell', 'rent', 'trade', 'free']
   const filterLabels = { '': 'All', sell: 'For Sale', rent: 'For Rent', trade: 'Trade', free: 'Free' }
@@ -42,6 +43,15 @@ function HomePage() {
           <h2 style={styles.heading}>Campus Listings</h2>
           <p style={styles.subheading}>Find items from fellow ADNU students</p>
         </div>
+
+        <input
+          type="text"
+          placeholder="Search listings..."
+          value={search}
+          onChange={e => { setSearch(e.target.value) }}
+          onKeyDown={e => { if (e.key === 'Enter') fetchListings() }}
+          style={styles.searchInput}
+        />
 
         <div style={styles.filters}>
           {filters.map(f => (
@@ -213,6 +223,16 @@ const styles = {
     textAlign: 'center',
     padding: '40px',
     color: '#888',
+  },
+  searchInput: {
+    padding: '10px 16px',
+    borderRadius: '99px',
+    border: '1px solid #ddd',
+    fontSize: '14px',
+    width: '100%',
+    maxWidth: '400px',
+    outline: 'none',
+    marginBottom: '16px',
   },
   empty: {
     textAlign: 'center',

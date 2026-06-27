@@ -10,6 +10,7 @@ CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:root@localhost:3306/adnu_marketplace'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = 'onebighub-secret-key-2026'
+app.config['UPLOAD_FOLDER'] = 'uploads'
 
 db.init_app(app)
 jwt = JWTManager(app)
