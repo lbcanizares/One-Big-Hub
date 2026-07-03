@@ -10,9 +10,7 @@ function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
-  }
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -31,46 +29,42 @@ function LoginPage() {
 
   return (
     <div style={styles.page}>
-      <div style={styles.card}>
-        <div style={styles.logo}>🏪</div>
-        <h1 style={styles.title}>One Big Hub</h1>
-        <p style={styles.subtitle}>ADNU Campus Marketplace</p>
-
+      <div style={styles.left}>
+        <div style={styles.logoWrap}>
+          <div style={styles.logoCircle}>🏪</div>
+          <div style={styles.logoText}>One Big Hub</div>
+          <div style={styles.logoSub}>Buy · Sell · Trade · Rent</div>
+        </div>
+      </div>
+      <div style={styles.right}>
+        <div style={styles.avatarCircle}></div>
+        <h2 style={styles.title}>Sign in</h2>
         {error && <div style={styles.error}>{error}</div>}
-
         <form onSubmit={handleSubmit} style={styles.form}>
-          <div style={styles.field}>
-            <label style={styles.label}>School Email</label>
-            <input
-              type="email"
-              name="email"
-              placeholder="yourname@gbox.adnu.edu.ph"
-              value={form.email}
-              onChange={handleChange}
-              style={styles.input}
-              required
-            />
-          </div>
-          <div style={styles.field}>
-            <label style={styles.label}>Password</label>
-            <input
-              type="password"
-              name="password"
-              placeholder="Enter your password"
-              value={form.password}
-              onChange={handleChange}
-              style={styles.input}
-              required
-            />
-          </div>
+          <input
+            type="email"
+            name="email"
+            placeholder="School email (@gbox.adnu.edu.ph)"
+            value={form.email}
+            onChange={handleChange}
+            style={styles.input}
+            required
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={form.password}
+            onChange={handleChange}
+            style={styles.input}
+            required
+          />
           <button type="submit" style={styles.btn} disabled={loading}>
             {loading ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
-
         <p style={styles.footer}>
-          No account?{' '}
-          <Link to="/register" style={styles.linkText}>Create one</Link>
+          No account? <Link to="/register" style={styles.link}>Create one</Link>
         </p>
       </div>
     </div>
@@ -79,35 +73,55 @@ function LoginPage() {
 
 const styles = {
   page: {
+    display: 'flex',
     minHeight: '100vh',
+  },
+  left: {
+    flex: 1,
+    background: '#f0f0f0',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f0efff',
   },
-  card: {
-    background: 'white',
-    padding: '40px',
-    borderRadius: '16px',
-    width: '100%',
-    maxWidth: '400px',
-    boxShadow: '0 4px 24px rgba(83,74,183,0.1)',
+  logoWrap: {
     textAlign: 'center',
   },
-  logo: {
+  logoCircle: {
     fontSize: '48px',
-    marginBottom: '8px',
+    marginBottom: '12px',
   },
-  title: {
-    fontSize: '24px',
+  logoText: {
+    fontSize: '22px',
     fontWeight: '700',
-    color: '#534AB7',
+    color: '#1a1a1a',
     marginBottom: '4px',
   },
-  subtitle: {
+  logoSub: {
     fontSize: '13px',
     color: '#888',
-    marginBottom: '24px',
+  },
+  right: {
+    width: '420px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '48px 40px',
+    background: 'white',
+  },
+  avatarCircle: {
+    width: '72px',
+    height: '72px',
+    borderRadius: '50%',
+    background: '#e0e0e0',
+    marginBottom: '16px',
+  },
+  title: {
+    fontSize: '22px',
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: '20px',
+    alignSelf: 'flex-start',
   },
   error: {
     background: '#fff0f0',
@@ -115,49 +129,43 @@ const styles = {
     padding: '10px',
     borderRadius: '8px',
     fontSize: '13px',
-    marginBottom: '16px',
+    marginBottom: '12px',
+    width: '100%',
   },
   form: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '16px',
-    textAlign: 'left',
-  },
-  field: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  },
-  label: {
-    fontSize: '13px',
-    fontWeight: '500',
-    color: '#444',
+    gap: '12px',
+    width: '100%',
   },
   input: {
-    padding: '10px 14px',
-    borderRadius: '8px',
-    border: '1px solid #ddd',
-    fontSize: '14px',
+    padding: '11px 14px',
+    borderRadius: '6px',
+    border: '1px solid #ccc',
+    fontSize: '13px',
     outline: 'none',
+    background: '#f9f9f9',
   },
   btn: {
-    padding: '12px',
-    backgroundColor: '#534AB7',
+    padding: '11px',
+    background: '#1A73E8',
     color: 'white',
     border: 'none',
-    borderRadius: '8px',
-    fontSize: '15px',
+    borderRadius: '6px',
+    fontSize: '14px',
     fontWeight: '600',
+    cursor: 'pointer',
     marginTop: '4px',
   },
   footer: {
-    marginTop: '20px',
+    marginTop: '16px',
     fontSize: '13px',
     color: '#666',
   },
-  linkText: {
-    color: '#534AB7',
+  link: {
+    color: '#1A73E8',
     fontWeight: '500',
+    textDecoration: 'none',
   }
 }
 

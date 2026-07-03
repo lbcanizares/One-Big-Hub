@@ -10,7 +10,6 @@ function ProfilePage() {
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('active')
-  const [savedListings, setSavedListings] = useState([])
 
   useEffect(() => {
     fetchMyListings()
@@ -29,17 +28,6 @@ function ProfilePage() {
       setLoading(false)
     }
   }
-  const fetchSaved = async () => {
-  try {
-    const res = await axios.get('http://127.0.0.1:5000/api/listings/saved', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    setSavedListings(res.data.listings)
-  } catch (err) {
-    console.error(err)
-  }
-}
-fetchSaved()
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this listing?')) return
@@ -66,67 +54,77 @@ fetchSaved()
   }
 
   const activeListings = listings.filter(l => l.status === 'Available')
-  const soldListings = listings.filter(l => l.status !== 'Available')
-  const displayedListings = activeTab === 'active' ? activeListings : activeTab == 'sold' ? soldListings : savedListings
+  const soldListings = listings.filter(l => l.status === 'Sold')
+  const rentedListings = listings.filter(l => l.status === 'Rented')
+  const tradedListings = listings.filter(l => l.status === 'Traded')
 
-  const badgeColors = { sell: '#534AB7', rent: '#EF9F27', trade: '#4CAF50', free: '#888' }
+  const tabs = [
+    { key: 'active', label: 'Active listing' },
+    { key: 'sold', label: 'Sold' },
+    { key: 'rented', label: 'Rented out' },
+    { key: 'traded', label: 'Traded' },
+    { key: 'reviews', label: 'Reviews' },
+  ]
+
+  const displayedListings =
+    activeTab === 'active' ? activeListings :
+    activeTab === 'sold' ? soldListings :
+    activeTab === 'rented' ? rentedListings :
+    activeTab === 'traded' ? tradedListings : []
+
+  const badgeColors = { sell: '#1A73E8', rent: '#EF9F27', trade: '#4CAF50', free: '#888' }
 
   return (
-    <div>
+    <div style={styles.page}>
       <Navbar />
-      <div style={styles.page}>
+      <div style={styles.body}>
 
         {/* Profile header */}
         <div style={styles.profileCard}>
-          <div style={styles.avatar}>
-            {user.name.charAt(0).toUpperCase()}
+          <div style={styles.avatarWrap}>
+            <div style={styles.avatar}>
+              {user.name.charAt(0).toUpperCase()}
+            </div>
           </div>
           <div style={styles.info}>
             <div style={styles.name}>{user.name}</div>
-            <div style={styles.email}>{user.email}</div>
-            {user.department && (
-              <div style={styles.dept}>{user.department}</div>
-            )}
+            <div style={styles.university}>Course · Ateneo de Naga University</div>
             <div style={styles.stats}>
               <span style={styles.stat}>⭐ {user.rating || '0.0'} rating</span>
-              <span style={styles.stat}>📦 {activeListings.length} active</span>
-              <span style={styles.stat}>✅ {soldListings.length} sold/done</span>
+              <span style={styles.stat}>📦 {activeListings.length} listed</span>
+              <span style={styles.stat}>✅ {soldListings.length} sold</span>
+              <span style={styles.stat}>🔄 {tradedListings.length} traded</span>
             </div>
           </div>
-          <button onClick={() => navigate('/post')} style={styles.postBtn}>
-            + Post listing
-          </button>
+          <div style={styles.btnGroup}>
+            <button onClick={() => navigate('/post')} style={styles.postBtn}>+ Post listing</button>
+            <button style={styles.logoutBtn}>Logout</button>
+          </div>
         </div>
 
         {/* Tabs */}
         <div style={styles.tabs}>
-          <button
-            onClick={() => setActiveTab('active')}
-            style={{ ...styles.tab, ...(activeTab === 'active' ? styles.tabActive : {}) }}
-          >
-            Active listings ({activeListings.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('sold')}
-            style={{ ...styles.tab, ...(activeTab === 'sold' ? styles.tabActive : {}) }}
-          >
-            Sold / Done ({soldListings.length})
-          </button>
+          {tabs.map(t => (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key)}
+              style={{
+                ...styles.tab,
+                ...(activeTab === t.key ? styles.tabActive : {})
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
-        <button
-            onClick={() => setActiveTab('saved')}
-             style={{ ...styles.tab, ...(activeTab === 'saved' ? styles.tabActive : {}) }}
-          >
-             Saved ({savedListings.length})
-          </button>
 
-        {/* Listings grid */}
-        {loading ? (
+        {/* Content */}
+        {activeTab === 'reviews' ? (
+          <div style={styles.empty}>No reviews yet.</div>
+        ) : loading ? (
           <div style={styles.empty}>Loading...</div>
         ) : displayedListings.length === 0 ? (
-          <div style={styles.empty}>
-            {activeTab === 'active' ? 'No active listings. Post something!' : 'No sold listings yet.'}
-          </div>
+          <div style={styles.empty}>No listings here yet.</div>
         ) : (
           <div style={styles.grid}>
             {displayedListings.map(l => (
@@ -138,35 +136,21 @@ fetchSaved()
                   {l.image_url ? (
                     <img src={l.image_url} alt={l.title} style={styles.image} />
                   ) : (
-                    <div style={styles.noImage}>No photo</div>
+                    <div style={styles.noImage}></div>
                   )}
                 </div>
                 <div style={styles.cardBody}>
-                  <div style={styles.cardTop}>
-                    <span style={styles.title}>{l.title}</span>
-                    <span style={{
-                      ...styles.badge,
-                      background: badgeColors[l.transaction_type] || '#534AB7'
-                    }}>
-                      {l.transaction_type}
-                    </span>
-                  </div>
+                  <div style={styles.cardTitle}>{l.title}</div>
                   <div style={styles.price}>
                     {l.price ? `₱ ${Number(l.price).toLocaleString()}` : 'Open to offers'}
                   </div>
                   <div style={styles.cardActions}>
                     {l.status === 'Available' && (
-                      <button
-                        onClick={() => handleMarkSold(l.id)}
-                        style={styles.soldBtn}
-                      >
-                        Mark as sold
+                      <button onClick={() => handleMarkSold(l.id)} style={styles.soldBtn}>
+                        Mark sold
                       </button>
                     )}
-                    <button
-                      onClick={() => handleDelete(l.id)}
-                      style={styles.deleteBtn}
-                    >
+                    <button onClick={() => handleDelete(l.id)} style={styles.deleteBtn}>
                       Delete
                     </button>
                   </div>
@@ -182,32 +166,38 @@ fetchSaved()
 
 const styles = {
   page: {
+    minHeight: '100vh',
+    background: '#f5f5f5',
+  },
+  body: {
     maxWidth: '1100px',
     margin: '0 auto',
     padding: '24px 16px',
   },
   profileCard: {
     background: 'white',
-    borderRadius: '16px',
-    padding: '28px',
-    boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+    borderRadius: '12px',
+    padding: '24px',
     display: 'flex',
     alignItems: 'center',
     gap: '20px',
     marginBottom: '20px',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+  },
+  avatarWrap: {
+    flexShrink: 0,
   },
   avatar: {
     width: '64px',
     height: '64px',
     borderRadius: '50%',
-    background: '#534AB7',
+    background: '#1A73E8',
     color: 'white',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '28px',
+    fontSize: '26px',
     fontWeight: '700',
-    flexShrink: 0,
   },
   info: {
     flex: 1,
@@ -216,50 +206,61 @@ const styles = {
     gap: '4px',
   },
   name: {
-    fontSize: '20px',
+    fontSize: '18px',
     fontWeight: '700',
-    color: '#333',
+    color: '#1a1a1a',
   },
-  email: {
+  university: {
     fontSize: '13px',
     color: '#888',
   },
-  dept: {
-    fontSize: '13px',
-    color: '#534AB7',
-    fontWeight: '500',
-  },
   stats: {
     display: 'flex',
-    gap: '14px',
+    gap: '10px',
     marginTop: '6px',
     flexWrap: 'wrap',
   },
   stat: {
     fontSize: '12px',
-    color: '#666',
-    background: '#f5f5f5',
-    padding: '4px 10px',
+    color: '#555',
+    background: '#f0f4ff',
+    padding: '3px 10px',
     borderRadius: '99px',
+    border: '1px solid #d0e1ff',
+  },
+  btnGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+    flexShrink: 0,
   },
   postBtn: {
-    padding: '10px 20px',
-    background: '#534AB7',
+    padding: '8px 18px',
+    background: '#1A73E8',
     color: 'white',
     border: 'none',
-    borderRadius: '99px',
-    fontSize: '14px',
+    borderRadius: '8px',
+    fontSize: '13px',
     fontWeight: '600',
     cursor: 'pointer',
-    flexShrink: 0,
+  },
+  logoutBtn: {
+    padding: '8px 18px',
+    background: 'white',
+    color: '#888',
+    border: '1px solid #ddd',
+    borderRadius: '8px',
+    fontSize: '13px',
+    cursor: 'pointer',
   },
   tabs: {
     display: 'flex',
-    gap: '8px',
+    gap: '6px',
     marginBottom: '16px',
+    flexWrap: 'wrap',
   },
   tab: {
-    padding: '8px 20px',
+    padding: '7px 16px',
     borderRadius: '99px',
     border: '1px solid #ddd',
     background: 'white',
@@ -268,24 +269,24 @@ const styles = {
     cursor: 'pointer',
   },
   tabActive: {
-    background: '#534AB7',
+    background: '#1A73E8',
     color: 'white',
-    border: '1px solid #534AB7',
+    border: '1px solid #1A73E8',
   },
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-    gap: '16px',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+    gap: '14px',
   },
   card: {
     background: 'white',
-    borderRadius: '12px',
+    borderRadius: '10px',
     overflow: 'hidden',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
   },
   imageBox: {
-    height: '140px',
-    background: '#f0efff',
+    height: '130px',
+    background: '#e8e8e8',
     cursor: 'pointer',
     overflow: 'hidden',
   },
@@ -296,42 +297,23 @@ const styles = {
   },
   noImage: {
     height: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#aaa',
-    fontSize: '13px',
+    background: '#e8e8e8',
   },
   cardBody: {
-    padding: '12px',
+    padding: '10px 12px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '6px',
+    gap: '5px',
   },
-  cardTop: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: '6px',
-  },
-  title: {
-    fontSize: '14px',
+  cardTitle: {
+    fontSize: '13px',
     fontWeight: '600',
-    color: '#333',
-    flex: 1,
-  },
-  badge: {
-    fontSize: '10px',
-    padding: '2px 8px',
-    borderRadius: '99px',
-    color: 'white',
-    whiteSpace: 'nowrap',
-    textTransform: 'capitalize',
+    color: '#1a1a1a',
   },
   price: {
-    fontSize: '15px',
+    fontSize: '14px',
     fontWeight: '700',
-    color: '#534AB7',
+    color: '#1A73E8',
   },
   cardActions: {
     display: 'flex',
@@ -340,29 +322,27 @@ const styles = {
   },
   soldBtn: {
     flex: 1,
-    padding: '6px',
+    padding: '5px',
     borderRadius: '6px',
     border: '1px solid #4CAF50',
     background: 'white',
     color: '#4CAF50',
     fontSize: '11px',
     cursor: 'pointer',
-    fontWeight: '500',
   },
   deleteBtn: {
     flex: 1,
-    padding: '6px',
+    padding: '5px',
     borderRadius: '6px',
     border: '1px solid #e53e3e',
     background: 'white',
     color: '#e53e3e',
     fontSize: '11px',
     cursor: 'pointer',
-    fontWeight: '500',
   },
   empty: {
     textAlign: 'center',
-    padding: '40px',
+    padding: '60px',
     color: '#aaa',
     fontSize: '14px',
   }

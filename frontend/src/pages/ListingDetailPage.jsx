@@ -10,16 +10,15 @@ function ListingDetailPage() {
   const navigate = useNavigate()
   const [listing, setListing] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [offerMsg, setOfferMsg] = useState('')
-  const [offerPrice, setOfferPrice] = useState('')
+  const [saved, setSaved] = useState(false)
   const [showOffer, setShowOffer] = useState(false)
+  const [offerPrice, setOfferPrice] = useState('')
+  const [offerMsg, setOfferMsg] = useState('')
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
-  const [saved, setSaved] = useState(false)
+  const [activePhoto, setActivePhoto] = useState(0)
 
-  useEffect(() => {
-    fetchListing()
-  }, [id])
+  useEffect(() => { fetchListing() }, [id])
 
   const fetchListing = async () => {
     try {
@@ -32,9 +31,23 @@ function ListingDetailPage() {
     }
   }
 
+  const handleSave = async () => {
+    try {
+      const res = await axios.post(
+        `http://127.0.0.1:5000/api/listings/${listing.id}/save`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      setSaved(res.data.saved)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   const handleChat = async () => {
     try {
-      const res = await axios.post('http://127.0.0.1:5000/api/chat/conversations',
+      const res = await axios.post(
+        'http://127.0.0.1:5000/api/chat/conversations',
         { listing_id: listing.id },
         { headers: { Authorization: `Bearer ${token}` } }
       )
@@ -51,135 +64,121 @@ function ListingDetailPage() {
         offer_price: offerPrice,
         message: offerMsg
       }, { headers: { Authorization: `Bearer ${token}` } })
-      setSuccess('Offer sent successfully!')
+      setSuccess('Offer sent!')
       setShowOffer(false)
     } catch (err) {
       setError('Failed to send offer')
     }
   }
 
-  const handleSave = async () => {
-    try {
-    const res = await axios.post(
-      `http://127.0.0.1:5000/api/listings/${listing.id}/save`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    )
-    setSaved(res.data.saved)
-  } catch (err) {
-    console.error(err)
-  }
-}
-
   if (loading) return <div><Navbar /><div style={styles.center}>Loading...</div></div>
   if (!listing) return <div><Navbar /><div style={styles.center}>Listing not found.</div></div>
 
   const isOwner = user && user.id === listing.seller.id
-  const badgeColors = { sell: '#534AB7', rent: '#EF9F27', trade: '#4CAF50', free: '#888' }
+  const badgeColors = { sell: '#1A73E8', rent: '#EF9F27', trade: '#4CAF50', free: '#888' }
+  const photos = listing.photos && listing.photos.length > 0 ? listing.photos : []
 
   return (
-    <div>
+    <div style={styles.page}>
       <Navbar />
-      <div style={styles.page}>
-        <button onClick={() => navigate('/')} style={styles.backBtn}>← Back to listings</button>
+      <div style={styles.body}>
+        <button onClick={() => navigate('/')} style={styles.backBtn}>← Back to all listings</button>
 
         <div style={styles.container}>
-          {/* Left - Photo */}
+          {/* Left - Photos */}
           <div style={styles.photoSection}>
-            {listing.photos && listing.photos.length > 0 ? (
-              <img src={listing.photos[0]} alt={listing.title} style={styles.photo} />
-            ) : (
-              <div style={styles.noPhoto}>No photo available</div>
-            )}
+            <div style={styles.mainPhoto}>
+              {photos.length > 0 ? (
+                <img src={photos[activePhoto]} alt={listing.title} style={styles.mainImg} />
+              ) : (
+                <div style={styles.noPhoto}>Main photo</div>
+              )}
+            </div>
+            <div style={styles.thumbRow}>
+              {['Photo 2', 'Photo 3', 'Photo 4', 'Photo 5'].map((p, i) => (
+                <div
+                  key={i}
+                  style={{
+                    ...styles.thumb,
+                    ...(photos[i + 1] ? {} : { background: '#e8e8e8' })
+                  }}
+                  onClick={() => photos[i + 1] && setActivePhoto(i + 1)}
+                >
+                  {photos[i + 1] ? (
+                    <img src={photos[i + 1]} alt={p} style={styles.thumbImg} />
+                  ) : (
+                    <span style={styles.thumbLabel}>{p}</span>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Right - Details */}
           <div style={styles.details}>
             <div style={styles.topRow}>
-              <h1 style={styles.title}>{listing.title}</h1>
-              <span style={{
-                ...styles.badge,
-                background: badgeColors[listing.transaction_type] || '#534AB7'
-              }}>
-                {listing.transaction_type}
-              </span>
+              <div style={styles.titleRow}>
+                <h1 style={styles.title}>{listing.title}</h1>
+                <span style={{
+                  ...styles.badge,
+                  background: badgeColors[listing.transaction_type] || '#1A73E8'
+                }}>
+                  {listing.transaction_type}
+                </span>
+              </div>
+              <button onClick={handleSave} style={styles.heartBtn}>
+                {saved ? '❤️' : '🤍'}
+              </button>
             </div>
 
             <div style={styles.price}>
-              {listing.price
-                ? `₱ ${Number(listing.price).toLocaleString()}`
-                : listing.transaction_type === 'free'
-                ? 'Free'
-                : 'Open to offers'}
-              {listing.transaction_type === 'rent' && listing.rent_duration && (
-                <span style={styles.rentDuration}> / {listing.rent_duration}</span>
-              )}
+              ₱ {listing.price ? Number(listing.price).toLocaleString() : '—'}
             </div>
-
-            {listing.trade_for && (
-              <div style={styles.infoRow}>
-                <span style={styles.infoLabel}>Looking for:</span>
-                <span>{listing.trade_for}</span>
-              </div>
-            )}
 
             <div style={styles.tags}>
               {listing.category && <span style={styles.tag}>{listing.category}</span>}
               {listing.condition && <span style={styles.tag}>{listing.condition}</span>}
             </div>
 
-            <hr style={styles.divider} />
-
             <div style={styles.section}>
-              <div style={styles.sectionTitle}>Description</div>
-              <p style={styles.description}>{listing.description || 'No description provided.'}</p>
+              <div style={styles.sectionLabel}>Description</div>
+              <div style={styles.descBox}>
+                <p style={styles.desc}>{listing.description || 'No description provided.'}</p>
+              </div>
             </div>
-
-            <hr style={styles.divider} />
 
             <div style={styles.sellerRow}>
               <div style={styles.sellerAvatar}>
                 {listing.seller.name.charAt(0).toUpperCase()}
               </div>
-              <div>
+              <div style={styles.sellerInfo}>
                 <div style={styles.sellerName}>{listing.seller.name}</div>
-                <div style={styles.sellerInfo}>
-                  {listing.seller.department} · ★ {listing.seller.rating || '0.0'}
+                <div style={styles.sellerMeta}>
+                  {'★'.repeat(5)} · {listing.seller.department || 'ADNU'}
+                  <br />
+                  <span style={styles.sellerSub}>website</span>
                 </div>
               </div>
+              <button style={styles.viewProfileBtn}>View profile</button>
             </div>
 
-            {listing.meetup_location && (
-              <div style={styles.meetup}>
-                📍 Meet-up: {listing.meetup_location}
-              </div>
-            )}
-
-            <hr style={styles.divider} />
-
             {success && <div style={styles.success}>{success}</div>}
-            {error && <div style={styles.error}>{error}</div>}
+            {error && <div style={styles.errorBox}>{error}</div>}
 
             {!isOwner && (
               <div style={styles.actions}>
-                <button onClick={handleChat} style={styles.chatBtn}>
-                  💬 Chat Seller
-                </button>
-                <button onClick={() => setShowOffer(!showOffer)} style={styles.offerBtn}>
-                  Make Offer
-                </button>
+                <button onClick={handleChat} style={styles.chatBtn}>Chat seller</button>
+                <button onClick={() => setShowOffer(!showOffer)} style={styles.offerBtn}>Make offer</button>
               </div>
             )}
 
             {isOwner && (
-              <div style={styles.ownerNote}>
-                This is your listing
-              </div>
+              <div style={styles.ownerNote}>This is your listing</div>
             )}
 
             {showOffer && (
               <div style={styles.offerBox}>
-                <div style={styles.sectionTitle}>Send an Offer</div>
+                <div style={styles.sectionLabel}>Send an Offer</div>
                 <input
                   type="number"
                   placeholder="Your offer price (₱)"
@@ -194,9 +193,7 @@ function ListingDetailPage() {
                   style={styles.textarea}
                   rows={3}
                 />
-                <button onClick={handleOffer} style={styles.offerBtn}>
-                  Send Offer
-                </button>
+                <button onClick={handleOffer} style={styles.offerBtn}>Send Offer</button>
               </div>
             )}
           </div>
@@ -207,240 +204,111 @@ function ListingDetailPage() {
 }
 
 const styles = {
-  page: {
-    maxWidth: '1100px',
-    margin: '0 auto',
-    padding: '24px 16px',
-  },
+  page: { minHeight: '100vh', background: '#f5f5f5' },
+  body: { maxWidth: '1100px', margin: '0 auto', padding: '20px 16px' },
   backBtn: {
-    background: 'none',
-    border: 'none',
-    color: '#534AB7',
-    fontSize: '14px',
-    cursor: 'pointer',
-    marginBottom: '16px',
-    padding: '0',
+    background: 'none', border: 'none', color: '#1A73E8',
+    fontSize: '13px', cursor: 'pointer', marginBottom: '14px', padding: 0,
   },
   container: {
-    display: 'flex',
-    gap: '32px',
-    background: 'white',
-    borderRadius: '16px',
-    padding: '32px',
-    boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+    display: 'flex', gap: '28px', background: 'white',
+    borderRadius: '12px', padding: '28px',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
   },
-  photoSection: {
-    flex: 1,
+  photoSection: { flex: 1 },
+  mainPhoto: {
+    height: '240px', background: '#e8e8e8', borderRadius: '10px',
+    marginBottom: '10px', overflow: 'hidden',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
-  photo: {
-    width: '100%',
-    borderRadius: '12px',
-    objectFit: 'cover',
-    maxHeight: '360px',
+  mainImg: { width: '100%', height: '100%', objectFit: 'cover' },
+  noPhoto: { color: '#aaa', fontSize: '14px' },
+  thumbRow: { display: 'flex', gap: '8px' },
+  thumb: {
+    flex: 1, height: '52px', background: '#e8e8e8', borderRadius: '6px',
+    overflow: 'hidden', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
-  noPhoto: {
-    height: '300px',
-    background: '#f0efff',
-    borderRadius: '12px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#aaa',
-    fontSize: '14px',
-  },
-  details: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-  },
-  topRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: '8px',
-  },
-  title: {
-    fontSize: '22px',
-    fontWeight: '700',
-    color: '#333',
-    flex: 1,
-  },
+  thumbImg: { width: '100%', height: '100%', objectFit: 'cover' },
+  thumbLabel: { fontSize: '9px', color: '#aaa' },
+  details: { flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' },
+  topRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' },
+  titleRow: { display: 'flex', alignItems: 'center', gap: '10px', flex: 1 },
+  title: { fontSize: '20px', fontWeight: '700', color: '#1a1a1a' },
   badge: {
-    fontSize: '11px',
-    padding: '4px 10px',
-    borderRadius: '99px',
-    color: 'white',
-    textTransform: 'capitalize',
-    whiteSpace: 'nowrap',
+    fontSize: '11px', padding: '3px 10px', borderRadius: '99px',
+    color: 'white', textTransform: 'capitalize', whiteSpace: 'nowrap',
   },
-  price: {
-    fontSize: '24px',
-    fontWeight: '700',
-    color: '#534AB7',
+  heartBtn: {
+    background: 'none', border: 'none', fontSize: '20px',
+    cursor: 'pointer', flexShrink: 0,
   },
-  rentDuration: {
-    fontSize: '14px',
-    fontWeight: '400',
-    color: '#888',
-  },
-  infoRow: {
-    display: 'flex',
-    gap: '8px',
-    fontSize: '13px',
-    color: '#555',
-  },
-  infoLabel: {
-    fontWeight: '500',
-  },
-  tags: {
-    display: 'flex',
-    gap: '8px',
-    flexWrap: 'wrap',
-  },
+  price: { fontSize: '22px', fontWeight: '700', color: '#1A73E8' },
+  tags: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
   tag: {
-    fontSize: '12px',
-    padding: '4px 12px',
-    borderRadius: '99px',
-    background: '#f0efff',
-    color: '#534AB7',
-    border: '1px solid #AFA9EC',
+    fontSize: '12px', padding: '4px 12px', borderRadius: '99px',
+    background: '#e8f0fe', color: '#1A73E8', border: '1px solid #c5d8fc',
   },
-  divider: {
-    border: 'none',
-    borderTop: '1px solid #eee',
+  section: { display: 'flex', flexDirection: 'column', gap: '6px' },
+  sectionLabel: { fontSize: '12px', fontWeight: '600', color: '#555' },
+  descBox: {
+    background: '#f9f9f9', borderRadius: '8px',
+    padding: '12px', border: '1px solid #eee',
   },
-  section: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  },
-  sectionTitle: {
-    fontSize: '13px',
-    fontWeight: '600',
-    color: '#444',
-  },
-  description: {
-    fontSize: '14px',
-    color: '#555',
-    lineHeight: '1.6',
-  },
-  sellerRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-  },
+  desc: { fontSize: '13px', color: '#555', lineHeight: '1.6' },
+  sellerRow: { display: 'flex', alignItems: 'center', gap: '10px' },
   sellerAvatar: {
-    width: '40px',
-    height: '40px',
-    borderRadius: '50%',
-    background: '#534AB7',
-    color: 'white',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '16px',
-    fontWeight: '700',
-    flexShrink: 0,
+    width: '38px', height: '38px', borderRadius: '50%',
+    background: '#1A73E8', color: 'white',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: '15px', fontWeight: '700', flexShrink: 0,
   },
-  sellerName: {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#333',
+  sellerInfo: { flex: 1 },
+  sellerName: { fontSize: '13px', fontWeight: '600', color: '#1a1a1a' },
+  sellerMeta: { fontSize: '11px', color: '#888', lineHeight: 1.6 },
+  sellerSub: { color: '#1A73E8' },
+  viewProfileBtn: {
+    padding: '6px 14px', borderRadius: '6px',
+    border: '1px solid #ddd', background: 'white',
+    fontSize: '12px', color: '#555', cursor: 'pointer',
   },
-  sellerInfo: {
-    fontSize: '12px',
-    color: '#888',
-  },
-  meetup: {
-    fontSize: '13px',
-    color: '#666',
-  },
-  actions: {
-    display: 'flex',
-    gap: '10px',
-  },
+  actions: { display: 'flex', gap: '10px', marginTop: '4px' },
   chatBtn: {
-    flex: 1,
-    padding: '12px',
-    borderRadius: '8px',
-    border: '1px solid #534AB7',
-    background: 'white',
-    color: '#534AB7',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
+    flex: 1, padding: '11px', borderRadius: '8px',
+    border: '1px solid #1A73E8', background: 'white',
+    color: '#1A73E8', fontSize: '14px', fontWeight: '600', cursor: 'pointer',
   },
   offerBtn: {
-    flex: 2,
-    padding: '12px',
-    borderRadius: '8px',
-    border: 'none',
-    background: '#534AB7',
-    color: 'white',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
+    flex: 2, padding: '11px', borderRadius: '8px',
+    border: 'none', background: '#1A73E8',
+    color: 'white', fontSize: '14px', fontWeight: '600', cursor: 'pointer',
   },
   ownerNote: {
-    padding: '10px',
-    background: '#f0efff',
-    borderRadius: '8px',
-    fontSize: '13px',
-    color: '#534AB7',
-    textAlign: 'center',
+    padding: '10px', background: '#e8f0fe', borderRadius: '8px',
+    fontSize: '13px', color: '#1A73E8', textAlign: 'center',
   },
   offerBox: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-    padding: '16px',
-    background: '#f9f9f9',
-    borderRadius: '10px',
+    display: 'flex', flexDirection: 'column', gap: '10px',
+    padding: '16px', background: '#f9f9f9', borderRadius: '10px',
   },
   input: {
-    padding: '10px 14px',
-    borderRadius: '8px',
-    border: '1px solid #ddd',
-    fontSize: '14px',
-    outline: 'none',
+    padding: '9px 14px', borderRadius: '8px',
+    border: '1px solid #ddd', fontSize: '13px', outline: 'none',
   },
   textarea: {
-    padding: '10px 14px',
-    borderRadius: '8px',
-    border: '1px solid #ddd',
-    fontSize: '14px',
-    outline: 'none',
-    resize: 'vertical',
-    fontFamily: 'inherit',
+    padding: '9px 14px', borderRadius: '8px',
+    border: '1px solid #ddd', fontSize: '13px',
+    outline: 'none', resize: 'vertical', fontFamily: 'inherit',
   },
   success: {
-    background: '#f0fff4',
-    color: '#276749',
-    padding: '10px',
-    borderRadius: '8px',
-    fontSize: '13px',
+    background: '#f0fff4', color: '#276749',
+    padding: '10px', borderRadius: '8px', fontSize: '13px',
   },
-  error: {
-    background: '#fff0f0',
-    color: '#e53e3e',
-    padding: '10px',
-    borderRadius: '8px',
-    fontSize: '13px',
+  errorBox: {
+    background: '#fff0f0', color: '#e53e3e',
+    padding: '10px', borderRadius: '8px', fontSize: '13px',
   },
-  saveBtn: {
-    padding: '6px 14px',
-    borderRadius: '99px',
-    border: '1px solid #ddd',
-    background: 'white',
-    fontSize: '13px',
-    cursor: 'pointer',
-    },
-  center: {
-    textAlign: 'center',
-    padding: '60px',
-    color: '#888',
-  }
+  center: { textAlign: 'center', padding: '60px', color: '#888' },
 }
 
 export default ListingDetailPage

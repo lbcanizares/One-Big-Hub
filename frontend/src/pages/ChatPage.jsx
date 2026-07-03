@@ -12,19 +12,12 @@ function ChatPage() {
   const [conversations, setConversations] = useState([])
   const [newMessage, setNewMessage] = useState('')
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
   const bottomRef = useRef(null)
 
-  useEffect(() => {
-    fetchConversations()
-  }, [])
-
-  useEffect(() => {
-    if (id) fetchMessages()
-  }, [id])
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  useEffect(() => { fetchConversations() }, [])
+  useEffect(() => { if (id) fetchMessages() }, [id])
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
   const fetchConversations = async () => {
     try {
@@ -54,7 +47,8 @@ function ChatPage() {
     e.preventDefault()
     if (!newMessage.trim()) return
     try {
-      await axios.post(`http://127.0.0.1:5000/api/chat/conversations/${id}/messages`,
+      await axios.post(
+        `http://127.0.0.1:5000/api/chat/conversations/${id}/messages`,
         { content: newMessage },
         { headers: { Authorization: `Bearer ${token}` } }
       )
@@ -70,55 +64,82 @@ function ChatPage() {
     ? (activeConvo.buyer.id === user.id ? activeConvo.seller : activeConvo.buyer)
     : null
 
+  const filteredConvos = conversations.filter(c => {
+    const other = c.buyer.id === user.id ? c.seller : c.buyer
+    return other.name.toLowerCase().includes(search.toLowerCase())
+  })
+
   return (
-    <div>
+    <div style={styles.page}>
       <Navbar />
-      <div style={styles.page}>
-        {/* Left - Conversation list */}
+      <div style={styles.body}>
+
+        {/* Left sidebar */}
         <div style={styles.sidebar}>
-          <div style={styles.sidebarHeader}>Messages</div>
-          {loading ? (
-            <div style={styles.empty}>Loading...</div>
-          ) : conversations.length === 0 ? (
-            <div style={styles.empty}>No conversations yet</div>
-          ) : (
-            conversations.map(c => {
-              const other = c.buyer.id === user.id ? c.seller : c.buyer
-              return (
-                <div
-                  key={c.id}
-                  onClick={() => navigate(`/chat/${c.id}`)}
-                  style={{
-                    ...styles.convoItem,
-                    ...(parseInt(id) === c.id ? styles.convoItemActive : {})
-                  }}
-                >
-                  <div style={styles.convoAvatar}>
-                    {other.name.charAt(0).toUpperCase()}
+          <div style={styles.sidebarHeader}>
+            <div style={styles.backBtn} onClick={() => navigate('/')}>← </div>
+            <div style={styles.sidebarTitle}>Chat</div>
+            <div style={styles.moreBtn}>⋯</div>
+          </div>
+          <div style={styles.searchWrap}>
+            <input
+              type="text"
+              placeholder="Search..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={styles.searchInput}
+            />
+          </div>
+          <div style={styles.convoList}>
+            {loading ? (
+              <div style={styles.empty}>Loading...</div>
+            ) : filteredConvos.length === 0 ? (
+              <div style={styles.empty}>No conversations yet</div>
+            ) : (
+              filteredConvos.map(c => {
+                const other = c.buyer.id === user.id ? c.seller : c.buyer
+                const isActive = parseInt(id) === c.id
+                return (
+                  <div
+                    key={c.id}
+                    onClick={() => navigate(`/chat/${c.id}`)}
+                    style={{
+                      ...styles.convoItem,
+                      ...(isActive ? styles.convoItemActive : {})
+                    }}
+                  >
+                    <div style={styles.convoAvatar}>
+                      {other.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div style={styles.convoInfo}>
+                      <div style={styles.convoTop}>
+                        <span style={styles.convoName}>{other.name}</span>
+                        <span style={styles.convoTime}>
+                          {c.last_message ? 'now' : ''}
+                        </span>
+                      </div>
+                      <div style={styles.convoSub}>{c.listing.title}</div>
+                      {c.last_message && (
+                        <div style={styles.convoLast}>{c.last_message}</div>
+                      )}
+                    </div>
                   </div>
-                  <div style={styles.convoInfo}>
-                    <div style={styles.convoName}>{other.name}</div>
-                    <div style={styles.convoListing}>{c.listing.title}</div>
-                    {c.last_message && (
-                      <div style={styles.convoLastMsg}>{c.last_message}</div>
-                    )}
-                  </div>
-                </div>
-              )
-            })
-          )}
+                )
+              })
+            )}
+          </div>
         </div>
 
-        {/* Right - Chat window */}
+        {/* Chat window */}
         <div style={styles.chatWindow}>
           {!id ? (
             <div style={styles.noChat}>
               <div style={styles.noChatIcon}>💬</div>
-              <div>Select a conversation to start chatting</div>
+              <div style={styles.noChatText}>Select a conversation</div>
             </div>
           ) : (
             <>
-              {/* Chat header */}
+              {/* Header */}
               <div style={styles.chatHeader}>
                 {otherPerson && (
                   <>
@@ -128,11 +149,18 @@ function ChatPage() {
                     <div>
                       <div style={styles.headerName}>{otherPerson.name}</div>
                       {activeConvo && (
-                        <div style={styles.headerListing}>
-                          re: {activeConvo.listing.title}
+                        <div style={styles.headerSub}>
+                          Course · {'★'.repeat(5)}
                         </div>
                       )}
                     </div>
+                    {activeConvo && (
+                      <div style={styles.listingPill}>
+                        <span style={styles.listingPillText}>
+                          {activeConvo.listing.title}
+                        </span>
+                      </div>
+                    )}
                   </>
                 )}
               </div>
@@ -182,7 +210,7 @@ function ChatPage() {
                   onChange={e => setNewMessage(e.target.value)}
                   style={styles.input}
                 />
-                <button type="submit" style={styles.sendBtn}>Send</button>
+                <button type="submit" style={styles.sendBtn}>➤</button>
               </form>
             </>
           )}
@@ -194,45 +222,83 @@ function ChatPage() {
 
 const styles = {
   page: {
+    minHeight: '100vh',
+    background: '#f5f5f5',
+  },
+  body: {
     display: 'flex',
-    height: 'calc(100vh - 56px)',
+    height: 'calc(100vh - 57px)',
     maxWidth: '1100px',
     margin: '0 auto',
     padding: '24px 16px',
     gap: '16px',
   },
   sidebar: {
-    width: '280px',
+    width: '260px',
     flexShrink: 0,
     background: 'white',
-    borderRadius: '16px',
-    boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
-    overflow: 'hidden',
+    borderRadius: '12px',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
     display: 'flex',
     flexDirection: 'column',
+    overflow: 'hidden',
   },
   sidebarHeader: {
-    padding: '16px 20px',
-    fontWeight: '700',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '14px 16px',
+    borderBottom: '1px solid #f0f0f0',
+  },
+  backBtn: {
     fontSize: '16px',
-    borderBottom: '1px solid #eee',
+    cursor: 'pointer',
+    color: '#555',
+  },
+  sidebarTitle: {
+    fontSize: '15px',
+    fontWeight: '700',
+    color: '#1a1a1a',
+  },
+  moreBtn: {
+    fontSize: '18px',
+    cursor: 'pointer',
+    color: '#555',
+  },
+  searchWrap: {
+    padding: '10px 12px',
+    borderBottom: '1px solid #f0f0f0',
+  },
+  searchInput: {
+    width: '100%',
+    padding: '7px 12px',
+    borderRadius: '99px',
+    border: '1px solid #ddd',
+    fontSize: '12px',
+    outline: 'none',
+    background: '#f5f5f5',
+    boxSizing: 'border-box',
+  },
+  convoList: {
+    flex: 1,
+    overflowY: 'auto',
   },
   convoItem: {
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    padding: '12px 16px',
+    padding: '12px 14px',
     cursor: 'pointer',
     borderBottom: '1px solid #f5f5f5',
   },
   convoItemActive: {
-    background: '#f0efff',
+    background: '#e8f0fe',
   },
   convoAvatar: {
-    width: '36px',
-    height: '36px',
+    width: '38px',
+    height: '38px',
     borderRadius: '50%',
-    background: '#534AB7',
+    background: '#1A73E8',
     color: 'white',
     display: 'flex',
     alignItems: 'center',
@@ -245,19 +311,28 @@ const styles = {
     flex: 1,
     minWidth: 0,
   },
+  convoTop: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   convoName: {
     fontSize: '13px',
     fontWeight: '600',
-    color: '#333',
+    color: '#1a1a1a',
   },
-  convoListing: {
+  convoTime: {
+    fontSize: '10px',
+    color: '#aaa',
+  },
+  convoSub: {
     fontSize: '11px',
     color: '#888',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
-  convoLastMsg: {
+  convoLast: {
     fontSize: '11px',
     color: '#aaa',
     overflow: 'hidden',
@@ -267,8 +342,8 @@ const styles = {
   chatWindow: {
     flex: 1,
     background: 'white',
-    borderRadius: '16px',
-    boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+    borderRadius: '12px',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
@@ -279,16 +354,13 @@ const styles = {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#aaa',
     gap: '10px',
-    fontSize: '14px',
   },
-  noChatIcon: {
-    fontSize: '40px',
-  },
+  noChatIcon: { fontSize: '40px' },
+  noChatText: { fontSize: '14px', color: '#aaa' },
   chatHeader: {
     padding: '14px 20px',
-    borderBottom: '1px solid #eee',
+    borderBottom: '1px solid #f0f0f0',
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
@@ -297,7 +369,7 @@ const styles = {
     width: '36px',
     height: '36px',
     borderRadius: '50%',
-    background: '#534AB7',
+    background: '#1A73E8',
     color: 'white',
     display: 'flex',
     alignItems: 'center',
@@ -309,11 +381,23 @@ const styles = {
   headerName: {
     fontSize: '14px',
     fontWeight: '600',
-    color: '#333',
+    color: '#1a1a1a',
   },
-  headerListing: {
+  headerSub: {
     fontSize: '11px',
     color: '#888',
+  },
+  listingPill: {
+    marginLeft: 'auto',
+    background: '#f0f4ff',
+    border: '1px solid #d0e1ff',
+    borderRadius: '8px',
+    padding: '4px 10px',
+  },
+  listingPillText: {
+    fontSize: '11px',
+    color: '#1A73E8',
+    fontWeight: '500',
   },
   messages: {
     flex: 1,
@@ -335,63 +419,69 @@ const styles = {
     gap: '8px',
   },
   msgAvatar: {
-    width: '28px',
-    height: '28px',
+    width: '26px',
+    height: '26px',
     borderRadius: '50%',
     background: '#ddd',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '11px',
+    fontSize: '10px',
     fontWeight: '700',
     flexShrink: 0,
   },
   bubble: {
-    padding: '10px 14px',
+    padding: '9px 13px',
     borderRadius: '16px',
     maxWidth: '60%',
-    fontSize: '14px',
+    fontSize: '13px',
     lineHeight: '1.4',
   },
   bubbleMine: {
-    background: '#534AB7',
+    background: '#1A73E8',
     color: 'white',
     borderRadius: '16px 16px 4px 16px',
   },
   bubbleOther: {
     background: '#f0f0f0',
-    color: '#333',
+    color: '#1a1a1a',
     borderRadius: '16px 16px 16px 4px',
   },
   msgTime: {
-    fontSize: '10px',
-    marginTop: '4px',
+    fontSize: '9px',
+    marginTop: '3px',
     opacity: 0.7,
     textAlign: 'right',
   },
   inputRow: {
     display: 'flex',
     gap: '10px',
-    padding: '14px 16px',
-    borderTop: '1px solid #eee',
+    padding: '12px 16px',
+    borderTop: '1px solid #f0f0f0',
+    alignItems: 'center',
   },
   input: {
     flex: 1,
-    padding: '10px 14px',
+    padding: '9px 16px',
     borderRadius: '99px',
     border: '1px solid #ddd',
-    fontSize: '14px',
+    fontSize: '13px',
     outline: 'none',
+    background: '#f5f5f5',
   },
   sendBtn: {
-    padding: '10px 20px',
-    borderRadius: '99px',
+    width: '36px',
+    height: '36px',
+    borderRadius: '50%',
     border: 'none',
-    background: '#534AB7',
+    background: '#1A73E8',
     color: 'white',
     fontSize: '14px',
-    fontWeight: '600',
     cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
   empty: {
     padding: '20px',

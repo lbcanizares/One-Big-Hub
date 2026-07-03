@@ -1,110 +1,139 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
-import { useNavigate } from 'react-router-dom'
 
 function HomePage() {
   const { token } = useAuth()
+  const navigate = useNavigate()
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('')
-  const [search, setSearch] = useState('')
-  const navigate = useNavigate()
+  const [category, setCategory] = useState('')
 
   useEffect(() => {
     fetchListings()
-  }, [filter])
+  }, [filter, category])
 
   const fetchListings = async () => {
-  setLoading(true)
-  try {
-    let url = 'http://127.0.0.1:5000/api/listings/?'
-    if (filter) url += `type=${filter}&`
-    if (search) url += `search=${search}&`
-    const res = await axios.get(url)
-    setListings(res.data.listings)
-  } catch (err) {
-    console.error(err)
-  } finally {
-    setLoading(false)
+    setLoading(true)
+    try {
+      let url = 'http://127.0.0.1:5000/api/listings/?'
+      if (filter) url += `type=${filter}&`
+      if (category) url += `category=${category}&`
+      const res = await axios.get(url)
+      setListings(res.data.listings)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
   }
-}
 
-  const filters = ['', 'sell', 'rent', 'trade', 'free']
-  const filterLabels = { '': 'All', sell: 'For Sale', rent: 'For Rent', trade: 'Trade', free: 'Free' }
-  const badgeColors = { sell: '#534AB7', rent: '#EF9F27', trade: '#4CAF50', free: '#888', Available: '#534AB7' }
+  const badgeColors = {
+    sell: '#1A73E8',
+    rent: '#EF9F27',
+    trade: '#4CAF50',
+    free: '#888'
+  }
+
+  const categories = ['Books', 'Electronics', 'Uniforms', 'Food', 'Dorm stuff', 'Services', 'Others']
 
   return (
-    <div>
+    <div style={styles.page}>
       <Navbar />
-      <div style={styles.page}>
-        <div style={styles.header}>
-          <h2 style={styles.heading}>Campus Listings</h2>
-          <p style={styles.subheading}>Find items from fellow ADNU students</p>
-        </div>
+      <div style={styles.body}>
 
-        <input
-          type="text"
-          placeholder="Search listings..."
-          value={search}
-          onChange={e => { setSearch(e.target.value) }}
-          onKeyDown={e => { if (e.key === 'Enter') fetchListings() }}
-          style={styles.searchInput}
-        />
-
-        <div style={styles.filters}>
-          {filters.map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              style={{
-                ...styles.filterBtn,
-                ...(filter === f ? styles.filterBtnActive : {})
-              }}
-            >
-              {filterLabels[f]}
-            </button>
-          ))}
-        </div>
-
-        {loading ? (
-          <div style={styles.loading}>Loading listings...</div>
-        ) : listings.length === 0 ? (
-          <div style={styles.empty}>No listings found.</div>
-        ) : (
-          <div style={styles.grid}>
-            {listings.map(listing => (
-              <div key={listing.id} style={styles.card} onClick={() => navigate(`/listing/${listing.id}`)}>
-                <div style={styles.imageBox}>
-                  {listing.image_url ? (
-                    <img src={listing.image_url} alt={listing.title} style={styles.image} />
-                  ) : (
-                    <div style={styles.noImage}>No photo</div>
-                  )}
-                </div>
-                <div style={styles.cardBody}>
-                  <div style={styles.cardTop}>
-                    <span style={styles.title}>{listing.title}</span>
-                    <span style={{
-                      ...styles.badge,
-                      backgroundColor: badgeColors[listing.transaction_type] || '#534AB7'
-                    }}>
-                      {listing.transaction_type}
-                    </span>
-                  </div>
-                  <div style={styles.price}>
-                    {listing.price ? `₱ ${Number(listing.price).toLocaleString()}` : listing.transaction_type === 'free' ? 'Free' : 'Open to offers'}
-                  </div>
-                  <div style={styles.seller}>by {listing.seller.name}</div>
-                  {listing.meetup_location && (
-                    <div style={styles.location}>📍 {listing.meetup_location}</div>
-                  )}
-                </div>
+        {/* Sidebar */}
+        <div style={styles.sidebar}>
+          <div style={styles.sidebarSection}>
+            <div style={styles.sidebarTitle}>Listing Type</div>
+            {[
+              { label: 'All listings', value: '' },
+              { label: 'For sale', value: 'sell' },
+              { label: 'For trade', value: 'trade' },
+              { label: 'For rent', value: 'rent' },
+              { label: 'Free items', value: 'free' },
+            ].map(item => (
+              <div
+                key={item.value}
+                onClick={() => setFilter(item.value)}
+                style={{
+                  ...styles.sidebarItem,
+                  ...(filter === item.value ? styles.sidebarItemActive : {})
+                }}
+              >
+                {item.label}
               </div>
             ))}
           </div>
-        )}
+
+          <div style={styles.sidebarSection}>
+            <div style={styles.sidebarTitle}>Category</div>
+            {categories.map(c => (
+              <div
+                key={c}
+                onClick={() => setCategory(category === c ? '' : c)}
+                style={{
+                  ...styles.sidebarItem,
+                  ...(category === c ? styles.sidebarItemActive : {})
+                }}
+              >
+                {c}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Main content */}
+        <div style={styles.main}>
+          <div style={styles.topRow}>
+            <div style={styles.heading}>All listings</div>
+            <div style={styles.sortBox}>Sort: Newest ▾</div>
+          </div>
+
+          {loading ? (
+            <div style={styles.empty}>Loading listings...</div>
+          ) : listings.length === 0 ? (
+            <div style={styles.empty}>No listings found.</div>
+          ) : (
+            <div style={styles.grid}>
+              {listings.map(listing => (
+                <div
+                  key={listing.id}
+                  style={styles.card}
+                  onClick={() => navigate(`/listing/${listing.id}`)}
+                >
+                  <div style={styles.imageBox}>
+                    {listing.image_url ? (
+                      <img src={listing.image_url} alt={listing.title} style={styles.image} />
+                    ) : (
+                      <div style={styles.noImage}></div>
+                    )}
+                  </div>
+                  <div style={styles.cardBody}>
+                    <div style={styles.cardTop}>
+                      <span style={styles.cardTitle}>{listing.title}</span>
+                      <span style={{
+                        ...styles.badge,
+                        background: badgeColors[listing.transaction_type] || '#1A73E8'
+                      }}>
+                        {listing.transaction_type}
+                      </span>
+                    </div>
+                    <div style={styles.price}>
+                      {listing.price
+                        ? `₱ ${Number(listing.price).toLocaleString()}`
+                        : listing.transaction_type === 'free' ? 'Free' : 'Open to offers'}
+                    </div>
+                    <div style={styles.seller}>by {listing.seller.name}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -112,59 +141,87 @@ function HomePage() {
 
 const styles = {
   page: {
+    minHeight: '100vh',
+    background: '#f5f5f5',
+  },
+  body: {
+    display: 'flex',
     maxWidth: '1200px',
     margin: '0 auto',
     padding: '24px 16px',
+    gap: '24px',
   },
-  header: {
-    marginBottom: '20px',
+  sidebar: {
+    width: '180px',
+    flexShrink: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '24px',
+  },
+  sidebarSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
+  },
+  sidebarTitle: {
+    fontSize: '12px',
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: '8px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+  },
+  sidebarItem: {
+    fontSize: '13px',
+    color: '#555',
+    padding: '5px 8px',
+    borderRadius: '6px',
+    cursor: 'pointer',
+  },
+  sidebarItemActive: {
+    color: '#1A73E8',
+    fontWeight: '600',
+    background: '#e8f0fe',
+  },
+  main: {
+    flex: 1,
+  },
+  topRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '16px',
   },
   heading: {
-    fontSize: '24px',
-    fontWeight: '700',
-    color: '#333',
+    fontSize: '16px',
+    fontWeight: '600',
+    color: '#1a1a1a',
   },
-  subheading: {
-    fontSize: '14px',
-    color: '#888',
-    marginTop: '4px',
-  },
-  filters: {
-    display: 'flex',
-    gap: '10px',
-    marginBottom: '24px',
-    flexWrap: 'wrap',
-  },
-  filterBtn: {
-    padding: '7px 18px',
-    borderRadius: '99px',
+  sortBox: {
+    fontSize: '12px',
+    padding: '6px 12px',
     border: '1px solid #ddd',
+    borderRadius: '6px',
     background: 'white',
-    fontSize: '13px',
     color: '#555',
     cursor: 'pointer',
   },
-  filterBtnActive: {
-    background: '#534AB7',
-    color: 'white',
-    border: '1px solid #534AB7',
-  },
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-    gap: '16px',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+    gap: '14px',
   },
   card: {
     background: 'white',
-    borderRadius: '12px',
+    borderRadius: '10px',
     overflow: 'hidden',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
-    transition: 'transform 0.2s',
     cursor: 'pointer',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+    transition: 'box-shadow 0.2s',
   },
   imageBox: {
-    height: '150px',
-    background: '#f0efff',
+    height: '140px',
+    background: '#e8e8e8',
     overflow: 'hidden',
   },
   image: {
@@ -174,17 +231,13 @@ const styles = {
   },
   noImage: {
     height: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#aaa',
-    fontSize: '13px',
+    background: '#e8e8e8',
   },
   cardBody: {
-    padding: '12px',
+    padding: '10px 12px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '5px',
+    gap: '4px',
   },
   cardTop: {
     display: 'flex',
@@ -192,53 +245,35 @@ const styles = {
     alignItems: 'flex-start',
     gap: '6px',
   },
-  title: {
-    fontSize: '14px',
+  cardTitle: {
+    fontSize: '13px',
     fontWeight: '600',
-    color: '#333',
+    color: '#1a1a1a',
     flex: 1,
   },
   badge: {
-    fontSize: '10px',
-    padding: '2px 8px',
+    fontSize: '9px',
+    padding: '2px 7px',
     borderRadius: '99px',
     color: 'white',
-    whiteSpace: 'nowrap',
     textTransform: 'capitalize',
+    whiteSpace: 'nowrap',
+    flexShrink: 0,
   },
   price: {
-    fontSize: '15px',
+    fontSize: '14px',
     fontWeight: '700',
-    color: '#534AB7',
+    color: '#1A73E8',
   },
   seller: {
-    fontSize: '12px',
-    color: '#888',
-  },
-  location: {
     fontSize: '11px',
-    color: '#aaa',
-  },
-  loading: {
-    textAlign: 'center',
-    padding: '40px',
-    color: '#888',
-  },
-  searchInput: {
-    padding: '10px 16px',
-    borderRadius: '99px',
-    border: '1px solid #ddd',
-    fontSize: '14px',
-    width: '100%',
-    maxWidth: '400px',
-    outline: 'none',
-    marginBottom: '16px',
+    color: '#999',
   },
   empty: {
     textAlign: 'center',
-    padding: '40px',
+    padding: '60px',
     color: '#aaa',
-    fontSize: '15px',
+    fontSize: '14px',
   }
 }
 
