@@ -59,6 +59,18 @@ function ChatPage() {
     }
   }
 
+  const respondOffer = async (offerId, status) => {
+    try {
+      await axios.put(`http://127.0.0.1:5000/api/offers/${offerId}/respond`,
+        { status },
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      fetchMessages()
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   const activeConvo = conversations.find(c => c.id === parseInt(id))
   const otherPerson = activeConvo
     ? (activeConvo.buyer.id === user.id ? activeConvo.seller : activeConvo.buyer)
@@ -115,7 +127,9 @@ function ChatPage() {
                       <div style={styles.convoTop}>
                         <span style={styles.convoName}>{other.name}</span>
                         <span style={styles.convoTime}>
-                          {c.last_message ? 'now' : ''}
+                          {c.last_message_time
+                            ? new Date(c.last_message_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            : ''}
                         </span>
                       </div>
                       <div style={styles.convoSub}>{c.listing.title}</div>
@@ -143,24 +157,18 @@ function ChatPage() {
               <div style={styles.chatHeader}>
                 {otherPerson && (
                   <>
-                    <div style={styles.headerAvatar}>
+                  <div
+                    style={{ ...styles.headerAvatar, cursor: 'pointer' }} 
+                    onClick={() => navigate(`/user/${otherPerson.id}`)} 
+                    > 
                       {otherPerson.name.charAt(0).toUpperCase()}
                     </div>
-                    <div>
-                      <div style={styles.headerName}>{otherPerson.name}</div>
+                      <div style={{ cursor: 'pointer' }} onClick={() => navigate(`/user/${otherPerson.id}`)}>
+                        <div style={styles.headerName}>{otherPerson.name}</div>
                       {activeConvo && (
-                        <div style={styles.headerSub}>
-                          Course · {'★'.repeat(5)}
-                        </div>
+                        <div style={styles.headerSub}>Course · {'★'.repeat(5)}</div>
                       )}
                     </div>
-                    {activeConvo && (
-                      <div style={styles.listingPill}>
-                        <span style={styles.listingPillText}>
-                          {activeConvo.listing.title}
-                        </span>
-                      </div>
-                    )}
                   </>
                 )}
               </div>
@@ -189,7 +197,43 @@ function ChatPage() {
                           ...styles.bubble,
                           ...(isMine ? styles.bubbleMine : styles.bubbleOther)
                         }}>
-                          {m.content}
+                          {m.message_type === 'offer' && m.offer ? (
+                            <div>
+                              <div style={{ fontWeight: 700, marginBottom: 4 }}>
+                                💰 Offer: ₱{m.offer.price ?? '—'}
+                              </div>
+                              {m.content && <div style={{ marginBottom: 6 }}>{m.content}</div>}
+                              {m.offer.status === 'pending' && !isMine && (
+                                <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                                  <button onClick={() => respondOffer(m.offer.id, 'accepted')} style={styles.acceptBtn}>
+                                    Accept
+                                  </button>
+                                  <button onClick={() => respondOffer(m.offer.id, 'declined')} style={styles.declineBtn}>
+                                    Decline
+                                  </button>
+                                </div>
+                              )}
+                              {m.offer.status !== 'pending' && (
+                                <div style={{ fontSize: 11, marginTop: 4, opacity: 0.8 }}>
+                                  <div>Offer {m.offer.status}</div>
+                                    {m.offer.status === 'accepted' && activeConvo && (
+                                  <div>
+                                    <span
+                                      onClick={() => navigate(`/review/${activeConvo.listing.id}?with=${otherPerson.id}&name=${encodeURIComponent(otherPerson.name)}`)}
+                                      style={styles.reviewLink}
+                                      >
+                                      Leave a review
+                                    </span>
+                                  </div>
+                                 )}
+                              </div>
+                            )}
+                            </div>
+                          ) : m.message_type === 'system' ? (
+                            <div style={{ fontStyle: 'italic', opacity: 0.7 }}>{m.content}</div>
+                          ) : (
+                            m.content
+                          )}
                           <div style={styles.msgTime}>
                             {new Date(m.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </div>
@@ -488,6 +532,31 @@ const styles = {
     textAlign: 'center',
     color: '#aaa',
     fontSize: '13px',
+  },
+  acceptBtn: {
+    padding: '4px 12px',
+    borderRadius: '6px',
+    border: 'none',
+    background: '#4CAF50',
+    color: 'white',
+    fontSize: '11px',
+    cursor: 'pointer',
+  },
+  declineBtn: {
+    padding: '4px 12px',
+    borderRadius: '6px',
+    border: 'none',
+    background: '#e53e3e',
+    color: 'white',
+    fontSize: '11px',
+    cursor: 'pointer',
+  },
+  reviewLink: {
+  textDecoration: 'underline',
+  cursor: 'pointer',
+  fontWeight: '600',
+  fontSize: 'inherit',
+  color: 'inherit',
   }
 }
 

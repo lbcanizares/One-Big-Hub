@@ -5,29 +5,62 @@ import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
 
 function ProfilePage() {
-  const { user, token } = useAuth()
   const navigate = useNavigate()
+  const { user, token, logout, updateUser } = useAuth()
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('active')
-
+  const [profileData, setProfileData] = useState(null)
+  const [reviews, setReviews] = useState([])
+  
   useEffect(() => {
-    fetchMyListings()
-  }, [])
+  fetchMyListings()
+  fetchProfile()
+}, [])
+
+const fetchProfile = async () => {
+  try {
+    const res = await axios.get('http://127.0.0.1:5000/api/auth/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    updateUser(res.data.user)
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+useEffect(() => {
+  fetchMyListings()
+  fetchProfile()
+  fetchReviews()
+}, [])
+
+const fetchReviews = async () => {
+  try {
+    const res = await axios.get(`http://127.0.0.1:5000/api/reviews/user/${user.id}`)
+    setReviews(res.data.reviews)
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
 
   const fetchMyListings = async () => {
-    try {
-      const res = await axios.get('http://127.0.0.1:5000/api/listings/', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      const myListings = res.data.listings.filter(l => l.seller.id === parseInt(user.id))
-      setListings(myListings)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
+  try {
+    const res = await axios.get('http://127.0.0.1:5000/api/listings/my', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    setListings(res.data.listings)
+  } catch (err) {
+    console.error(err)
+  } finally {
+    setLoading(false)
   }
+}
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this listing?')) return
@@ -41,17 +74,20 @@ function ProfilePage() {
     }
   }
 
-  const handleMarkSold = async (id) => {
-    try {
-      await axios.put(`http://127.0.0.1:5000/api/listings/${id}`,
-        { status: 'Sold' },
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
-      fetchMyListings()
-    } catch (err) {
-      console.error(err)
-    }
+  const handleMarkSold = async (listing) => {
+  const confirmed = window.confirm(`Mark "${listing.title}" as sold?`)
+  if (!confirmed) return
+  try {
+    await axios.put(`http://127.0.0.1:5000/api/listings/${listing.id}`,
+      { status: 'Sold' },
+      { headers: { Authorization: `Bearer ${token}` } }
+    )
+    fetchMyListings()
+    navigate(`/review/${listing.id}`)
+  } catch (err) {
+    console.error(err)
   }
+}
 
   const activeListings = listings.filter(l => l.status === 'Available')
   const soldListings = listings.filter(l => l.status === 'Sold')
@@ -82,10 +118,14 @@ function ProfilePage() {
         {/* Profile header */}
         <div style={styles.profileCard}>
           <div style={styles.avatarWrap}>
+            {user.profile_photo ? (
+              <img src={user.profile_photo} alt={user.name} style={styles.avatarImg} />
+          ) : (
             <div style={styles.avatar}>
-              {user.name.charAt(0).toUpperCase()}
-            </div>
+               {user.name.charAt(0).toUpperCase()}
           </div>
+         )}
+      </div>
           <div style={styles.info}>
             <div style={styles.name}>{user.name}</div>
             <div style={styles.university}>Course · Ateneo de Naga University</div>
@@ -97,8 +137,8 @@ function ProfilePage() {
             </div>
           </div>
           <div style={styles.btnGroup}>
-            <button onClick={() => navigate('/post')} style={styles.postBtn}>+ Post listing</button>
-            <button style={styles.logoutBtn}>Logout</button>
+            <button onClick={() => navigate('/edit-profile')} style={styles.postBtn}>Edit profile</button>
+            <button onClick={handleLogout} style={styles.logoutBtn}>Logout</button>
           </div>
         </div>
 
@@ -120,8 +160,20 @@ function ProfilePage() {
 
         {/* Content */}
         {activeTab === 'reviews' ? (
-          <div style={styles.empty}>No reviews yet.</div>
-        ) : loading ? (
+          reviews.length === 0 ? (
+            <div style={styles.empty}>No reviews yet.</div>
+        ) : (
+          <div style={styles.reviewsList}>
+            {reviews.map(r => (
+              <div key={r.id} style={styles.reviewCard}>
+                <div style={styles.reviewStars}>{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</div>
+                {r.comment && <div style={styles.reviewComment}>{r.comment}</div>}
+                <div style={styles.reviewDate}>{new Date(r.created_at).toLocaleDateString()}</div>
+             </div>
+           ))}
+        </div>
+      )
+      ) : loading ? (
           <div style={styles.empty}>Loading...</div>
         ) : displayedListings.length === 0 ? (
           <div style={styles.empty}>No listings here yet.</div>
@@ -146,7 +198,7 @@ function ProfilePage() {
                   </div>
                   <div style={styles.cardActions}>
                     {l.status === 'Available' && (
-                      <button onClick={() => handleMarkSold(l.id)} style={styles.soldBtn}>
+                      <button onClick={() => handleMarkSold(l)} style={styles.soldBtn}>
                         Mark sold
                       </button>
                     )}
@@ -340,12 +392,43 @@ const styles = {
     fontSize: '11px',
     cursor: 'pointer',
   },
+  avatarImg: { 
+    width: '64px', 
+    height: '64px', 
+    borderRadius: '50%', 
+    objectFit: 'cover' 
+  },
   empty: {
     textAlign: 'center',
     padding: '60px',
     color: '#aaa',
     fontSize: '14px',
-  }
+  },
+  reviewsList: {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '10px',
+},
+reviewCard: {
+  background: 'white',
+  borderRadius: '10px',
+  padding: '14px 16px',
+  boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+},
+reviewStars: {
+  color: '#FFB800',
+  fontSize: '16px',
+  marginBottom: '4px',
+},
+reviewComment: {
+  fontSize: '13px',
+  color: '#333',
+  marginBottom: '6px',
+},
+reviewDate: {
+  fontSize: '11px',
+  color: '#aaa',
+},
 }
 
 export default ProfilePage

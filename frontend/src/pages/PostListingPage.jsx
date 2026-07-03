@@ -20,30 +20,35 @@ function PostListingPage() {
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [photo, setPhoto] = useState(null)
-  const [photoPreview, setPhotoPreview] = useState(null)
+  const [photos, setPhotos] = useState([])
+  const [photoPreviews, setPhotoPreviews] = useState([])
 
   const categories = ['Books & Notes', 'Electronics', 'Uniforms', 'Food', 'Dorm Stuff', 'Services', 'Others']
   const conditions = ['Brand New', 'Like New', 'Good', 'Fair', 'Poor']
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
-  const handlePhoto = (e) => {
-    const file = e.target.files[0]
-    if (file) {
-      setPhoto(file)
-      setPhotoPreview(URL.createObjectURL(file))
-    }
+  const handlePhoto = (e, index) => {
+  const file = e.target.files[0]
+  if (file) {
+    const newPhotos = [...photos]
+    const newPreviews = [...photoPreviews]
+    newPhotos[index] = file
+    newPreviews[index] = URL.createObjectURL(file)
+    setPhotos(newPhotos)
+    setPhotoPreviews(newPreviews)
   }
+}
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-    try {
-      const res = await axios.post('http://127.0.0.1:5000/api/listings/', form, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+  e.preventDefault()
+  setError('')
+  setLoading(true)
+  try {
+    const res = await axios.post('http://127.0.0.1:5000/api/listings/', form, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    for (const photo of photos) {
       if (photo) {
         const formData = new FormData()
         formData.append('photo', photo)
@@ -53,51 +58,58 @@ function PostListingPage() {
           { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
         )
       }
-      navigate('/')
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to post listing')
-    } finally {
-      setLoading(false)
     }
+    navigate('/')
+  } catch (err) {
+    setError(err.response?.data?.message || 'Failed to post listing')
+  } finally {
+    setLoading(false)
   }
+}
 
   return (
     <div style={styles.page}>
       <Navbar />
       <div style={styles.body}>
         <div style={styles.container}>
-
-          {/* Left - Photos */}
           <div style={styles.photoSection}>
-            <div style={styles.sectionLabel}>Photos</div>
-            <div
-              style={styles.mainUpload}
-              onClick={() => document.getElementById('photoInput').click()}
-            >
-              {photoPreview ? (
-                <img src={photoPreview} alt="preview" style={styles.previewImg} />
-              ) : (
-                <div style={styles.uploadPlaceholder}>
-                  <div style={styles.uploadIcon}>📷</div>
-                  <div style={styles.uploadText}>Click to upload photo</div>
-                </div>
-              )}
-            </div>
-            <input
-              id="photoInput"
-              type="file"
-              accept="image/*"
-              onChange={handlePhoto}
-              style={{ display: 'none' }}
-            />
-            <div style={styles.thumbRow}>
-              {['+', '+', '+', '+'].map((p, i) => (
-                <div key={i} style={styles.thumbBox}>{p}</div>
-              ))}
-            </div>
+  <div style={styles.sectionLabel}>Photos</div>
+  <div style={styles.thumbGrid}>
+    {[0, 1, 2, 3, 4].map((i) => (
+      <div
+        key={i}
+        style={{
+          ...styles.photoBox,
+          ...(i === 0 ? styles.mainPhotoBox : {})
+        }}
+        onClick={() => document.getElementById(`photoInput${i}`).click()}
+      >
+        {photoPreviews[i] ? (
+          <img src={photoPreviews[i]} alt={`photo${i}`} style={styles.previewImg} />
+        ) : (
+          <div style={styles.uploadPlaceholder}>
+            {i === 0 ? (
+              <>
+                <div style={styles.uploadIcon}>📷</div>
+                <div style={styles.uploadText}>Click to upload</div>
+              </>
+            ) : (
+              <div style={styles.plusIcon}>+</div>
+            )}
           </div>
+        )}
+        <input
+          id={`photoInput${i}`}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={(e) => handlePhoto(e, i)}
+        />
+      </div>
+    ))}
+  </div>
+</div>
 
-          {/* Right - Form */}
           <div style={styles.formSection}>
             <div style={styles.sectionLabel}>Listing details</div>
             {error && <div style={styles.error}>{error}</div>}
@@ -256,6 +268,7 @@ const styles = {
     flex: 1, height: '50px', background: '#f0f0f0', borderRadius: '6px',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     fontSize: '18px', color: '#bbb', cursor: 'pointer', border: '1px dashed #ccc',
+    position: 'relative',
   },
   formSection: { flex: 1 },
   error: {
@@ -291,11 +304,39 @@ const styles = {
     border: '1px solid #ddd', background: 'white',
     fontSize: '13px', color: '#555', cursor: 'pointer',
   },
+  thumbGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gridTemplateRows: 'auto auto',
+    gap: '8px',
+  },
+  mainPhotoBox: {
+    gridColumn: '1 / -1',
+    height: '180px',
+  },
+  photoBox: {
+    height: '90px',
+    background: '#f0f0f0',
+    borderRadius: '8px',
+    border: '1px dashed #ccc',
+    cursor: 'pointer',
+    overflow: 'hidden',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  previewImg: { width: '100%', height: '100%', objectFit: 'cover' },
+    uploadPlaceholder: { textAlign: 'center' },
+    uploadIcon: { fontSize: '24px', marginBottom: '4px' },
+    uploadText: { fontSize: '11px', color: '#aaa' },
+    plusIcon: { fontSize: '24px', color: '#bbb' },
+  
   publishBtn: {
     flex: 2, padding: '11px', borderRadius: '8px',
     border: 'none', background: '#1A73E8',
     color: 'white', fontSize: '14px', fontWeight: '600', cursor: 'pointer',
   }
+  
 }
 
 export default PostListingPage

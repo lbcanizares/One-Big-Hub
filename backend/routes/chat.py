@@ -22,6 +22,7 @@ def get_conversations():
             "buyer": {"id": c.buyer.id, "name": c.buyer.name},
             "seller": {"id": c.seller.id, "name": c.seller.name},
             "last_message": c.messages[-1].content if c.messages else None,
+            "last_message_time": c.messages[-1].sent_at.isoformat() if c.messages else None,
             "created_at": c.created_at.isoformat()
         } for c in convos]
     }), 200
@@ -58,18 +59,30 @@ def start_conversation():
 @chat_bp.route('/conversations/<int:convo_id>/messages', methods=['GET'])
 @jwt_required()
 def get_messages(convo_id):
+    user_id = int(get_jwt_identity())
     messages = Message.query.filter_by(conversation_id=convo_id).order_by(Message.sent_at).all()
 
+    unread = Message.query.filter_by(conversation_id=convo_id, is_read=False).filter(Message.sender_id != user_id).all()
+    for m in unread:
+        m.is_read = True
+    if unread:
+        db.session.commit()
+
     return jsonify({
-        "status": "success",
         "messages": [{
-            "id": m.id,
-            "sender_id": m.sender_id,
-            "sender_name": m.sender.name,
-            "content": m.content,
-            "is_read": m.is_read,
-            "sent_at": m.sent_at.isoformat()
-        } for m in messages]
+        "id": m.id,
+        "sender_id": m.sender_id,
+        "sender_name": m.sender.name,
+        "content": m.content,
+        "message_type": m.message_type,
+        "offer": {
+            "id": m.offer.id,
+            "price": float(m.offer.offer_price) if m.offer.offer_price else None,
+            "status": m.offer.status
+        } if m.offer_id and m.offer else None,
+        "is_read": m.is_read,
+        "sent_at": m.sent_at.isoformat()
+    } for m in messages]
     }), 200
 
 
@@ -88,3 +101,19 @@ def send_message(convo_id):
     db.session.commit()
 
     return jsonify({"status": "success", "message": "Message sent"}), 201
+
+@chat_bp.route('/unread-count', methods=['GET'])
+@jwt_required()
+def get_unread_count():
+    user_id = int(get_jwt_identity())
+    convos = Conversation.query.filter(
+        (Conversation.buyer_id == user_id) | (Conversation.seller_id == user_id)
+    ).all()
+
+    count = 0
+    for c in convos:
+        count += Message.query.filter_by(
+            conversation_id=c.id, is_read=False
+        ).filter(Message.sender_id != user_id).count()
+
+    return jsonify({"status": "success", "unread_count": count}), 200

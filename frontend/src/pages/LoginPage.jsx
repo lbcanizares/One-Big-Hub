@@ -31,13 +31,20 @@ function LoginPage() {
     <div style={styles.page}>
       <div style={styles.left}>
         <div style={styles.logoWrap}>
-          <div style={styles.logoCircle}>🏪</div>
+          <div style={styles.logoCircle}>
+          {<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-building-store"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 21l18 0" /><path d="M3 7v1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1h-18l2 -4h14l2 4" /><path d="M5 21l0 -10.15" /><path d="M19 21l0 -10.15" /><path d="M9 21v-4a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v4" /></svg>}
+          </div>
           <div style={styles.logoText}>One Big Hub</div>
           <div style={styles.logoSub}>Buy · Sell · Trade · Rent</div>
         </div>
       </div>
       <div style={styles.right}>
-        <div style={styles.avatarCircle}></div>
+       <div style={styles.avatarCircle}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#bbb">
+            <path d="M12 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10z"/>
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+         </svg>
+      </div>
         <h2 style={styles.title}>Sign in</h2>
         {error && <div style={styles.error}>{error}</div>}
         <form onSubmit={handleSubmit} style={styles.form}>
@@ -110,11 +117,14 @@ const styles = {
     background: 'white',
   },
   avatarCircle: {
-    width: '72px',
-    height: '72px',
+    width: '90px',
+    height: '90px',
     borderRadius: '50%',
-    background: '#e0e0e0',
-    marginBottom: '16px',
+    background: '#e8e8e8',
+    marginBottom: '20px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     fontSize: '22px',

@@ -10,6 +10,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     department = db.Column(db.String(100), nullable=True)
     profile_photo = db.Column(db.String(255), nullable=True)
+    contact_number = db.Column(db.String(20), nullable=True)
     rating = db.Column(db.Numeric(3, 2), default=0.0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -69,8 +70,12 @@ class Message(db.Model):
     conversation_id = db.Column(db.Integer, db.ForeignKey('conversations.id', ondelete='CASCADE'), nullable=False)
     sender_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     content = db.Column(db.Text, nullable=False)
+    message_type = db.Column(db.String(20), default='text')  # 'text', 'offer', 'system'
+    offer_id = db.Column(db.Integer, db.ForeignKey('offers.id', ondelete='SET NULL'), nullable=True)
     is_read = db.Column(db.Boolean, default=False)
     sent_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    offer = db.relationship('Offer', lazy=True)
 
 
 class Offer(db.Model):
@@ -93,6 +98,8 @@ class SavedListing(db.Model):
     listing_id = db.Column(db.Integer, db.ForeignKey('listings.id', ondelete='CASCADE'), nullable=False)
     saved_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    listing = db.relationship('Listing', lazy=True)
+
 
 class Review(db.Model):
     __tablename__ = 'reviews'
@@ -104,3 +111,4 @@ class Review(db.Model):
     rating = db.Column(db.Integer, nullable=False)
     comment = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    

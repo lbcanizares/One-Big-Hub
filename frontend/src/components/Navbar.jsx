@@ -1,8 +1,24 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useState, useEffect } from 'react'
+import axios from 'axios'
 
 function Navbar() {
-  const { user, logout } = useAuth()
+  const { user, token, logout } = useAuth()
+  const [unreadCount, setUnreadCount] = useState(0)
+
+useEffect(() => {
+  if (!user) return
+  const fetchUnread = () => {
+    axios.get('http://127.0.0.1:5000/api/chat/unread-count', {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then(res => setUnreadCount(res.data.unread_count)).catch(() => {})
+  }
+  fetchUnread()
+  const interval = setInterval(fetchUnread, 5000)
+  return () => clearInterval(interval)
+}, [user])
+
   const navigate = useNavigate()
 
   const handleLogout = () => {
@@ -13,7 +29,7 @@ function Navbar() {
   return (
     <nav style={styles.nav}>
       <Link to="/" style={styles.logo}>
-        <div style={styles.logoIcon}>🏪</div>
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1A73E8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-building-store"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 21l18 0" /><path d="M3 7v1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1h-18l2 -4h14l2 4" /><path d="M5 21l0 -10.15" /><path d="M19 21l0 -10.15" /><path d="M9 21v-4a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v4" /></svg>
         <div>
           <div style={styles.logoText}>One Big Hub</div>
           <div style={styles.logoSub}>Buy · Sell · Trade · Rent</div>
@@ -36,11 +52,15 @@ function Navbar() {
           <>
             <Link to="/profile" style={styles.navLink}>My Profile</Link>
             <Link to="/saved" style={styles.navLink}>Likes</Link>
-            <Link to="/chat" style={styles.navLink}>Chat</Link>
+            <Link to="/chat" style={{ ...styles.navLink, position: 'relative' }}>Chat{unreadCount > 0 && (<span style={styles.badge}>{unreadCount}</span>)}</Link>
             <Link to="/post" style={styles.postBtn}>Post listing</Link>
-            <div style={styles.avatar} onClick={handleLogout} title="Logout">
-              {user.name.charAt(0).toUpperCase()}
-            </div>
+            <div style={styles.avatar} onClick={() => navigate('/profile')}>
+              {user.profile_photo ? (
+                <img src={user.profile_photo} alt="avatar" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+              ) : (
+                user.name.charAt(0).toUpperCase()
+              )}
+        </div>
           </>
         ) : (
           <>
@@ -73,7 +93,6 @@ const styles = {
     textDecoration: 'none',
     flexShrink: 0,
   },
-  logoIcon: { fontSize: '26px' },
   logoText: {
     fontSize: '14px',
     fontWeight: '700',
@@ -117,6 +136,19 @@ const styles = {
     fontWeight: '600',
     textDecoration: 'none',
     whiteSpace: 'nowrap',
+  },
+  badge: {
+    position: 'absolute',
+    top: '-8px',
+    right: '-12px',
+    background: '#e53e3e',
+    color: 'white',
+    fontSize: '10px',
+    fontWeight: '700',
+    borderRadius: '99px',
+    padding: '1px 6px',
+    minWidth: '16px',
+    textAlign: 'center',
   },
   avatar: {
     width: '34px',

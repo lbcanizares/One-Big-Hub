@@ -29,7 +29,12 @@ def get_listings():
     if search:
         query = query.filter(Listing.title.ilike(f'%{search}%'))
 
-    listings = query.order_by(Listing.created_at.desc()).all()
+    sort = request.args.get('sort', 'newest')
+
+    if sort == 'oldest':
+        listings = query.order_by(Listing.created_at.asc()).all()
+    else:
+        listings = query.order_by(Listing.created_at.desc()).all()
 
     return jsonify({
         "status": "success",
@@ -93,7 +98,8 @@ def get_listing(listing_id):
                 "id": l.owner.id,
                 "name": l.owner.name,
                 "department": l.owner.department,
-                "rating": float(l.owner.rating) if l.owner.rating else 0.0
+                "rating": float(l.owner.rating) if l.owner.rating else 0.0,
+                "contact_number": l.owner.contact_number
             },
             "created_at": l.created_at.isoformat()
         }
@@ -211,3 +217,22 @@ def upload_photo(listing_id):
 @listings_bp.route('/uploads/<filename>')
 def serve_upload(filename):
     return send_from_directory('uploads', filename)
+
+@listings_bp.route('/my', methods=['GET'])
+@jwt_required()
+def get_my_listings():
+    user_id = int(get_jwt_identity())
+    listings = Listing.query.filter_by(user_id=user_id).order_by(Listing.created_at.desc()).all()
+
+    return jsonify({
+        "status": "success",
+        "listings": [{
+            "id": l.id,
+            "title": l.title,
+            "price": float(l.price) if l.price else None,
+            "transaction_type": l.transaction_type,
+            "status": l.status,
+            "image_url": l.photos[0].photo_url if l.photos else None,
+            "seller": {"id": l.owner.id, "name": l.owner.name},
+        } for l in listings]
+    }), 200

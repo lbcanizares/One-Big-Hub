@@ -8,6 +8,9 @@ import ListingDetailPage from './pages/ListingDetailPage'
 import ChatPage from './pages/ChatPage'
 import ProfilePage from './pages/ProfilePage'
 import LikedPage from './pages/LikedPage'
+import EditProfilePage from './pages/EditProfilePage'
+import UserProfilePage from './pages/UserProfilePage'
+import ReviewPage from './pages/ReviewPage'
 
 
 function PrivateRoute({ children }) {
@@ -29,6 +32,9 @@ function App() {
           <Route path="/chat/:id" element={<PrivateRoute><ChatPage /></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
           <Route path="/saved" element={<PrivateRoute><LikedPage /></PrivateRoute>} />
+          <Route path="/edit-profile" element={<PrivateRoute><EditProfilePage /></PrivateRoute>} />
+          <Route path="/user/:id" element={<PrivateRoute><UserProfilePage /></PrivateRoute>} />
+          <Route path="/review/:listing_id" element={<PrivateRoute><ReviewPage /></PrivateRoute>} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

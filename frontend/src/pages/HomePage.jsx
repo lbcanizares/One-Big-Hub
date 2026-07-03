@@ -16,21 +16,23 @@ function HomePage() {
     fetchListings()
   }, [filter, category])
 
-  const fetchListings = async () => {
-    setLoading(true)
-    try {
-      let url = 'http://127.0.0.1:5000/api/listings/?'
-      if (filter) url += `type=${filter}&`
-      if (category) url += `category=${category}&`
-      const res = await axios.get(url)
-      setListings(res.data.listings)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
+const [sort, setSort] = useState('newest')
 
+const fetchListings = async () => {
+  setLoading(true)
+  try {
+    let url = 'http://127.0.0.1:5000/api/listings/?'
+    if (filter) url += `type=${filter}&`
+    if (category) url += `category=${category}&`
+    if (sort) url += `sort=${sort}&`
+    const res = await axios.get(url)
+    setListings(res.data.listings)
+  } catch (err) {
+    console.error(err)
+  } finally {
+    setLoading(false)
+  }
+}
   const badgeColors = {
     sell: '#1A73E8',
     rent: '#EF9F27',
@@ -89,8 +91,15 @@ function HomePage() {
         {/* Main content */}
         <div style={styles.main}>
           <div style={styles.topRow}>
-            <div style={styles.heading}>All listings</div>
-            <div style={styles.sortBox}>Sort: Newest ▾</div>
+            <div style={styles.heading}>
+              {filter === '' ? 'All listings' :
+               filter === 'sell' ? 'For sale' :
+               filter === 'rent' ? 'For rent' :
+               filter === 'trade' ? 'For trade' :
+               filter === 'free' ? 'Free items' : 'All listings'}
+              {category ? ` · ${category}` : ''}
+            </div>
+            <div style={styles.sortBox}onClick={() => setSort(sort === 'newest' ? 'oldest' : 'newest')}>Sort: {sort === 'newest' ? 'Newest ▾' : 'Oldest ▾'}</div>
           </div>
 
           {loading ? (
@@ -146,17 +155,20 @@ const styles = {
   },
   body: {
     display: 'flex',
-    maxWidth: '1200px',
+    maxWidth: '1400px',
     margin: '0 auto',
     padding: '24px 16px',
-    gap: '24px',
+    gap: '16px',
+    boxSizing: 'border-box',
+    width: '100%',
   },
   sidebar: {
-    width: '180px',
+    width: '160px',
+    minWidth: '120px',
     flexShrink: 0,
     display: 'flex',
     flexDirection: 'column',
-    gap: '24px',
+    gap: '20px',
   },
   sidebarSection: {
     display: 'flex',
@@ -185,6 +197,7 @@ const styles = {
   },
   main: {
     flex: 1,
+    minWidth: 0,
   },
   topRow: {
     display: 'flex',
@@ -208,7 +221,7 @@ const styles = {
   },
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
     gap: '14px',
   },
   card: {

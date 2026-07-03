@@ -19,30 +19,40 @@ function ListingDetailPage() {
   const [activePhoto, setActivePhoto] = useState(0)
 
   useEffect(() => { fetchListing() }, [id])
+  
 
   const fetchListing = async () => {
-    try {
-      const res = await axios.get(`http://127.0.0.1:5000/api/listings/${id}`)
-      setListing(res.data.listing)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
+  try {
+    const res = await axios.get(`http://127.0.0.1:5000/api/listings/${id}`)
+    setListing(res.data.listing)
+
+    const savedRes = await axios.get('http://127.0.0.1:5000/api/listings/saved', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    const isSaved = savedRes.data.listings.some(l => l.id === parseInt(id))
+    setSaved(isSaved)
+  } catch (err) {
+    console.error(err)
+  } finally {
+    setLoading(false)
   }
+}
 
   const handleSave = async () => {
-    try {
-      const res = await axios.post(
-        `http://127.0.0.1:5000/api/listings/${listing.id}/save`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
-      setSaved(res.data.saved)
-    } catch (err) {
-      console.error(err)
-    }
+  console.log('token:', token)
+  console.log('listing id:', listing.id)
+  try {
+    const res = await axios.post(
+      `http://127.0.0.1:5000/api/listings/${listing.id}/save`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    )
+    console.log('save response:', res.data)
+    setSaved(res.data.saved)
+  } catch (err) {
+    console.error('save error:', err)
   }
+}
 
   const handleChat = async () => {
     try {
@@ -57,19 +67,20 @@ function ListingDetailPage() {
     }
   }
 
-  const handleOffer = async () => {
-    try {
-      await axios.post('http://127.0.0.1:5000/api/offers/', {
-        listing_id: listing.id,
-        offer_price: offerPrice,
-        message: offerMsg
-      }, { headers: { Authorization: `Bearer ${token}` } })
-      setSuccess('Offer sent!')
-      setShowOffer(false)
-    } catch (err) {
-      setError('Failed to send offer')
-    }
+const handleOffer = async () => {
+  try {
+    const res = await axios.post('http://127.0.0.1:5000/api/offers/', {
+      listing_id: listing.id,
+      offer_price: offerPrice,
+      message: offerMsg
+    }, { headers: { Authorization: `Bearer ${token}` } })
+    setSuccess('Offer sent!')
+    setShowOffer(false)
+    navigate(`/chat/${res.data.conversation_id}`)
+  } catch (err) {
+    setError('Failed to send offer')
   }
+}
 
   if (loading) return <div><Navbar /><div style={styles.center}>Loading...</div></div>
   if (!listing) return <div><Navbar /><div style={styles.center}>Listing not found.</div></div>
@@ -126,9 +137,9 @@ function ListingDetailPage() {
                   {listing.transaction_type}
                 </span>
               </div>
-              <button onClick={handleSave} style={styles.heartBtn}>
-                {saved ? '❤️' : '🤍'}
-              </button>
+             <button onClick={() => { console.log('heart clicked'); handleSave(); }} style={styles.heartBtn}>
+              {saved ? '❤️' : '🤍'}
+            </button>
             </div>
 
             <div style={styles.price}>
@@ -153,13 +164,18 @@ function ListingDetailPage() {
               </div>
               <div style={styles.sellerInfo}>
                 <div style={styles.sellerName}>{listing.seller.name}</div>
+                {listing.seller.contact_number && (
+                  <div style={styles.contactNumber}>
+                    📞 {listing.seller.contact_number}
+                  </div>
+                )}
                 <div style={styles.sellerMeta}>
                   {'★'.repeat(5)} · {listing.seller.department || 'ADNU'}
                   <br />
                   <span style={styles.sellerSub}>website</span>
                 </div>
               </div>
-              <button style={styles.viewProfileBtn}>View profile</button>
+              <button style={styles.viewProfileBtn} onClick={() => navigate(`/user/${listing.seller.id}`)}>View profile</button>
             </div>
 
             {success && <div style={styles.success}>{success}</div>}
@@ -307,6 +323,12 @@ const styles = {
   errorBox: {
     background: '#fff0f0', color: '#e53e3e',
     padding: '10px', borderRadius: '8px', fontSize: '13px',
+  },
+  contactNumber: {
+    fontSize: '13px',
+    color: '#1A73E8',
+    fontWeight: '500',
+    marginTop: '2px',
   },
   center: { textAlign: 'center', padding: '60px', color: '#888' },
 }
