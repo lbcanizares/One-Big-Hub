@@ -19,8 +19,8 @@ def get_conversations():
         "conversations": [{
             "id": c.id,
             "listing": {"id": c.listing.id, "title": c.listing.title},
-            "buyer": {"id": c.buyer.id, "name": c.buyer.name},
-            "seller": {"id": c.seller.id, "name": c.seller.name},
+            "buyer": {"id": c.buyer.id, "name": c.buyer.name, "department": c.buyer.department,"rating": float(c.buyer.rating) if c.buyer.rating else 0.0, "profile_photo": c.buyer.profile_photo},
+            "seller": {"id": c.seller.id, "name": c.seller.name, "department": c.seller.department,"rating": float(c.seller.rating) if c.seller.rating else 0.0, "profile_photo": c.seller.profile_photo},
             "last_message": c.messages[-1].content if c.messages else None,
             "last_message_time": c.messages[-1].sent_at.isoformat() if c.messages else None,
             "created_at": c.created_at.isoformat()

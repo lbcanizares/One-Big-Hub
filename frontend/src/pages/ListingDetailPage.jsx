@@ -98,32 +98,44 @@ const handleOffer = async () => {
         <div style={styles.container}>
           {/* Left - Photos */}
           <div style={styles.photoSection}>
-            <div style={styles.mainPhoto}>
-              {photos.length > 0 ? (
-                <img src={photos[activePhoto]} alt={listing.title} style={styles.mainImg} />
-              ) : (
-                <div style={styles.noPhoto}>Main photo</div>
-              )}
-            </div>
-            <div style={styles.thumbRow}>
-              {['Photo 2', 'Photo 3', 'Photo 4', 'Photo 5'].map((p, i) => (
-                <div
-                  key={i}
-                  style={{
-                    ...styles.thumb,
-                    ...(photos[i + 1] ? {} : { background: '#e8e8e8' })
-                  }}
-                  onClick={() => photos[i + 1] && setActivePhoto(i + 1)}
-                >
-                  {photos[i + 1] ? (
-                    <img src={photos[i + 1]} alt={p} style={styles.thumbImg} />
-                  ) : (
-                    <span style={styles.thumbLabel}>{p}</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+  <div style={styles.mainPhoto}>
+    {photos.length > 0 ? (
+      <img src={photos[activePhoto]} alt={listing.title} style={styles.mainImg} />
+    ) : (
+      <div style={styles.noPhoto}>No photo available</div>
+    )}
+    {photos.length > 1 && (
+      <>
+        <button
+          style={styles.arrowLeft}
+          onClick={() => setActivePhoto(activePhoto > 0 ? activePhoto - 1 : photos.length - 1)}
+        >
+          ‹
+        </button>
+        <button
+          style={styles.arrowRight}
+          onClick={() => setActivePhoto(activePhoto < photos.length - 1 ? activePhoto + 1 : 0)}
+        >
+          ›
+        </button>
+      </>
+    )}
+  </div>
+  {photos.length > 1 && (
+    <div style={styles.dots}>
+      {photos.map((_, i) => (
+        <div
+          key={i}
+          onClick={() => setActivePhoto(i)}
+          style={{
+            ...styles.dot,
+            ...(i === activePhoto ? styles.dotActive : {})
+          }}
+        />
+      ))}
+    </div>
+  )}
+</div>
 
           {/* Right - Details */}
           <div style={styles.details}>
@@ -233,10 +245,68 @@ const styles = {
   },
   photoSection: { flex: 1 },
   mainPhoto: {
-    height: '240px', background: '#e8e8e8', borderRadius: '10px',
-    marginBottom: '10px', overflow: 'hidden',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-  },
+  height: '280px',
+  background: '#e8e8e8',
+  borderRadius: '10px',
+  marginBottom: '10px',
+  overflow: 'hidden',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  position: 'relative',
+},
+arrowLeft: {
+  position: 'absolute',
+  left: '10px',
+  top: '50%',
+  transform: 'translateY(-50%)',
+  background: 'rgba(0,0,0,0.4)',
+  color: 'white',
+  border: 'none',
+  borderRadius: '50%',
+  width: '36px',
+  height: '36px',
+  fontSize: '22px',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 10,
+},
+arrowRight: {
+  position: 'absolute',
+  right: '10px',
+  top: '50%',
+  transform: 'translateY(-50%)',
+  background: 'rgba(0,0,0,0.4)',
+  color: 'white',
+  border: 'none',
+  borderRadius: '50%',
+  width: '36px',
+  height: '36px',
+  fontSize: '22px',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 10,
+},
+dots: {
+  display: 'flex',
+  justifyContent: 'center',
+  gap: '6px',
+  marginBottom: '10px',
+},
+dot: {
+  width: '8px',
+  height: '8px',
+  borderRadius: '50%',
+  background: '#ddd',
+  cursor: 'pointer',
+},
+dotActive: {
+  background: '#1A73E8',
+},
   mainImg: { width: '100%', height: '100%', objectFit: 'cover' },
   noPhoto: { color: '#aaa', fontSize: '14px' },
   thumbRow: { display: 'flex', gap: '8px' },

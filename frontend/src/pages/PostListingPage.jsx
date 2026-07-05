@@ -45,7 +45,11 @@ function PostListingPage() {
   setError('')
   setLoading(true)
   try {
-    const res = await axios.post('http://127.0.0.1:5000/api/listings/', form, {
+    const cleanForm = {
+      ...form,
+      price: form.price === '' ? null : form.price,
+    }
+    const res = await axios.post('http://127.0.0.1:5000/api/listings/', cleanForm, {
       headers: { Authorization: `Bearer ${token}` }
     })
     for (const photo of photos) {
@@ -148,46 +152,34 @@ function PostListingPage() {
               </div>
 
               <div style={styles.row}>
-                <div style={styles.field}>
-                  <label style={styles.label}>Price (₱)</label>
-                  <input
-                    type="number"
-                    name="price"
-                    placeholder="0.00"
-                    value={form.price}
-                    onChange={handleChange}
-                    style={styles.input}
-                  />
-                </div>
-                <div style={styles.field}>
-                  <label style={styles.label}>Category</label>
-                  <select name="category" value={form.category} onChange={handleChange} style={styles.input} required>
-                    <option value="">Select category ▾</option>
-                    {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div style={styles.field}>
-                  <label style={styles.label}>Condition</label>
-                  <select name="condition" value={form.condition} onChange={handleChange} style={styles.input}>
-                    <option value="">Select condition ▾</option>
-                    {conditions.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              {form.transaction_type === 'rent' && (
-                <div style={styles.field}>
-                  <label style={styles.label}>Rent Duration</label>
-                  <input
-                    type="text"
-                    name="rent_duration"
-                    placeholder="e.g. 1 day, 1 week"
-                    value={form.rent_duration}
-                    onChange={handleChange}
-                    style={styles.input}
-                  />
-                </div>
-              )}
+  {(form.transaction_type === 'sell' || form.transaction_type === 'rent') && (
+    <div style={styles.field}>
+      <label style={styles.label}>Price (₱)</label>
+      <input
+        type="number"
+        name="price"
+        placeholder="0.00"
+        value={form.price}
+        onChange={handleChange}
+        style={styles.input}
+      />
+    </div>
+  )}
+  <div style={styles.field}>
+    <label style={styles.label}>Category</label>
+    <select name="category" value={form.category} onChange={handleChange} style={styles.input} required>
+      <option value="">Select category ▾</option>
+      {categories.map(c => <option key={c} value={c}>{c}</option>)}
+    </select>
+  </div>
+  <div style={styles.field}>
+    <label style={styles.label}>Condition</label>
+    <select name="condition" value={form.condition} onChange={handleChange} style={styles.input}>
+      <option value="">Select condition ▾</option>
+      {conditions.map(c => <option key={c} value={c}>{c}</option>)}
+    </select>
+  </div>
+</div>
 
               {form.transaction_type === 'trade' && (
                 <div style={styles.field}>

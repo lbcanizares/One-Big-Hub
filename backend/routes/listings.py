@@ -120,7 +120,7 @@ def create_listing():
         category=data['category'],
         description=data.get('description'),
         transaction_type=data['transaction_type'],
-        price=data.get('price'),
+        price=data.get('price') if data.get('price') else None,
         rent_duration=data.get('rent_duration'),
         trade_for=data.get('trade_for'),
         meetup_location=data.get('meetup_location'),

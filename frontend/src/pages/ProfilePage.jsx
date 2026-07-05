@@ -96,17 +96,15 @@ const fetchReviews = async () => {
 
   const tabs = [
     { key: 'active', label: 'Active listing' },
-    { key: 'sold', label: 'Sold' },
-    { key: 'rented', label: 'Rented out' },
-    { key: 'traded', label: 'Traded' },
+    { key: 'sold', label: 'Sold / Traded / Rented out' },
     { key: 'reviews', label: 'Reviews' },
-  ]
+  ] 
 
-  const displayedListings =
-    activeTab === 'active' ? activeListings :
-    activeTab === 'sold' ? soldListings :
-    activeTab === 'rented' ? rentedListings :
-    activeTab === 'traded' ? tradedListings : []
+ const inactiveListings = listings.filter(l => l.status !== 'Available')
+
+ const displayedListings =
+  activeTab === 'active' ? activeListings :
+  activeTab === 'sold' ? inactiveListings : []
 
   const badgeColors = { sell: '#1A73E8', rent: '#EF9F27', trade: '#4CAF50', free: '#888' }
 
@@ -128,12 +126,11 @@ const fetchReviews = async () => {
       </div>
           <div style={styles.info}>
             <div style={styles.name}>{user.name}</div>
-            <div style={styles.university}>Course · Ateneo de Naga University</div>
+            <div style={styles.university}>{user.department || 'ADNU Student'} · Ateneo de Naga University</div>
             <div style={styles.stats}>
               <span style={styles.stat}>⭐ {user.rating || '0.0'} rating</span>
               <span style={styles.stat}>📦 {activeListings.length} listed</span>
-              <span style={styles.stat}>✅ {soldListings.length} sold</span>
-              <span style={styles.stat}>🔄 {tradedListings.length} traded</span>
+              <span style={styles.stat}>✅ {inactiveListings.length} sold/traded/rented</span>
             </div>
           </div>
           <div style={styles.btnGroup}>

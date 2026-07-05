@@ -16,21 +16,30 @@ function ChatPage() {
   const bottomRef = useRef(null)
 
   useEffect(() => { fetchConversations() }, [])
-  useEffect(() => { if (id) fetchMessages() }, [id])
+  useEffect(() => { 
+    if (id) { 
+    fetchMessages() 
+    const interval = setInterval(fetchMessages, 3000) 
+    return () => clearInterval(interval) 
+    } 
+   }, [id])
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
   const fetchConversations = async () => {
-    try {
-      const res = await axios.get('http://127.0.0.1:5000/api/chat/conversations', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      setConversations(res.data.conversations)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
+  try {
+    const res = await axios.get('http://127.0.0.1:5000/api/chat/conversations', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    const sorted = res.data.conversations.sort((a, b) => 
+      new Date(b.created_at) - new Date(a.created_at)
+    )
+    setConversations(sorted)
+  } catch (err) {
+    console.error(err)
+  } finally {
+    setLoading(false)
   }
+}
 
   const fetchMessages = async () => {
     try {
@@ -121,7 +130,11 @@ function ChatPage() {
                     }}
                   >
                     <div style={styles.convoAvatar}>
-                      {other.name.charAt(0).toUpperCase()}
+                        {other.profile_photo ? (
+                            <img src={other.profile_photo} alt={other.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                    ) : (
+                      other.name.charAt(0).toUpperCase()
+                      )}
                     </div>
                     <div style={styles.convoInfo}>
                       <div style={styles.convoTop}>
@@ -157,16 +170,17 @@ function ChatPage() {
               <div style={styles.chatHeader}>
                 {otherPerson && (
                   <>
-                  <div
-                    style={{ ...styles.headerAvatar, cursor: 'pointer' }} 
-                    onClick={() => navigate(`/user/${otherPerson.id}`)} 
-                    > 
-                      {otherPerson.name.charAt(0).toUpperCase()}
+                  <div style={{ ...styles.headerAvatar, cursor: 'pointer' }} onClick={() => navigate(`/user/${otherPerson.id}`)}>
+                    {otherPerson.profile_photo ? (
+                      <img src={otherPerson.profile_photo} alt={otherPerson.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                      ) : (
+                        otherPerson.name.charAt(0).toUpperCase()
+                        )}
                     </div>
                       <div style={{ cursor: 'pointer' }} onClick={() => navigate(`/user/${otherPerson.id}`)}>
                         <div style={styles.headerName}>{otherPerson.name}</div>
                       {activeConvo && (
-                        <div style={styles.headerSub}>Course · {'★'.repeat(5)}</div>
+                        <div style={styles.headerSub}> {otherPerson.department || 'ADNU'} · {'★'.repeat(Math.round(otherPerson.rating || 0))}{'☆'.repeat(5 - Math.round(otherPerson.rating || 0))} </div>
                       )}
                     </div>
                   </>
@@ -235,7 +249,7 @@ function ChatPage() {
                             m.content
                           )}
                           <div style={styles.msgTime}>
-                            {new Date(m.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(m.sent_at + 'Z').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </div>
                         </div>
                       </div>
