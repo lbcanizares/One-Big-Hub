@@ -19,27 +19,44 @@ function RegisterPage() {
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    if (!form.email.endsWith('@gbox.adnu.edu.ph'))
-      return setError('Only @gbox.adnu.edu.ph emails are allowed')
-    if (form.password !== form.confirmPassword)
-      return setError('Passwords do not match')
-    setLoading(true)
-    try {
-      await api.post('/api/auth/register', {
-        name: form.name,
+  e.preventDefault()
+  setError('')
+  if (!form.email.endsWith('@gbox.adnu.edu.ph'))
+    return setError('Only @gbox.adnu.edu.ph emails are allowed')
+  if (form.password !== form.confirmPassword)
+    return setError('Passwords do not match')
+  setLoading(true)
+  try {
+  
+    await api.post('/api/auth/register', {
+      name: form.name,
+      email: form.email,
+      password: form.password,
+      department: form.department
+    })
+
+    
+    if (avatarFile) {
+      const loginRes = await api.post('/api/auth/login', {
         email: form.email,
-        password: form.password,
-        department: form.department
+        password: form.password
       })
-      navigate('/login')
-    } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed')
-    } finally {
-      setLoading(false)
+      const token = loginRes.data.token
+
+      const formData = new FormData()
+      formData.append('photo', avatarFile)
+      await api.post('/api/auth/profile/photo', formData, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+      })
     }
+
+    navigate('/login')
+  } catch (err) {
+    setError(err.response?.data?.message || 'Registration failed')
+  } finally {
+    setLoading(false)
   }
+}
 
   return (
     <div style={styles.page}>
@@ -71,10 +88,13 @@ function RegisterPage() {
     type="file"
     accept="image/*"
     style={{ display: 'none' }}
-    onChange={e => {
-      const file = e.target.files[0]
-      if (file) setAvatarPreview(URL.createObjectURL(file))
-    }}
+   onChange={e => {
+  const file = e.target.files[0]
+  if (file) {
+    setAvatarPreview(URL.createObjectURL(file))
+    setAvatarFile(file)
+  }
+}}
   />
 </div>
 <div style={styles.uploadHint}>Upload profile photo (optional)</div>
