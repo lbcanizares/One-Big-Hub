@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '../api'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
 
@@ -28,8 +28,8 @@ const handleAvatar = async (e) => {
     const formData = new FormData()
     formData.append('photo', file)
     try {
-      const res = await axios.post(
-        'http://127.0.0.1:5000/api/auth/profile/photo',
+      const res = await api.post(
+        '/api/auth/profile/photo',
         formData,
         { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
       )
@@ -46,7 +46,7 @@ const handleSubmit = async (e) => {
   setError('')
   setSuccess('')
   try {
-    const res = await axios.put('http://127.0.0.1:5000/api/auth/profile',
+    const res = await api.put('/api/auth/profile',
       form,
       { headers: { Authorization: `Bearer ${token}` } }
     )

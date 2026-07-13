@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '../api'
 import { useAuth } from '../context/AuthContext'
 
 function LoginPage() {
@@ -17,8 +17,7 @@ function LoginPage() {
     setError('')
     setLoading(true)
     try {
-      const res = await axios.post('http://127.0.0.1:5000/api/auth/login', form)
-      login(res.data.user, res.data.token)
+      const res = await api.post('/api/auth/login', form)
       navigate('/')
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed')

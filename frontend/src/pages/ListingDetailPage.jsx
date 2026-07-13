@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '../api'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
 
@@ -23,10 +23,10 @@ function ListingDetailPage() {
 
   const fetchListing = async () => {
   try {
-    const res = await axios.get(`http://127.0.0.1:5000/api/listings/${id}`)
+    const res = await api.get(`/api/listings/${id}`)
     setListing(res.data.listing)
 
-    const savedRes = await axios.get('http://127.0.0.1:5000/api/listings/saved', {
+    const savedRes = await api.get('/api/listings/saved', {
       headers: { Authorization: `Bearer ${token}` }
     })
     const isSaved = savedRes.data.listings.some(l => l.id === parseInt(id))
@@ -42,8 +42,8 @@ function ListingDetailPage() {
   console.log('token:', token)
   console.log('listing id:', listing.id)
   try {
-    const res = await axios.post(
-      `http://127.0.0.1:5000/api/listings/${listing.id}/save`,
+    const res = await api.post(
+      `/api/listings/${listing.id}/save`,
       {},
       { headers: { Authorization: `Bearer ${token}` } }
     )
@@ -56,8 +56,8 @@ function ListingDetailPage() {
 
   const handleChat = async () => {
     try {
-      const res = await axios.post(
-        'http://127.0.0.1:5000/api/chat/conversations',
+      const res = await api.post(
+        '/api/chat/conversations',
         { listing_id: listing.id },
         { headers: { Authorization: `Bearer ${token}` } }
       )
@@ -69,7 +69,7 @@ function ListingDetailPage() {
 
 const handleOffer = async () => {
   try {
-    const res = await axios.post('http://127.0.0.1:5000/api/offers/', {
+    const res = await api.post('/api/offers/', {
       listing_id: listing.id,
       offer_price: offerPrice,
       message: offerMsg

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '../api'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
 
@@ -16,7 +16,7 @@ function LikedPage() {
 
   const fetchSaved = async () => {
     try {
-      const res = await axios.get('http://127.0.0.1:5000/api/listings/saved', {
+      const res = await api.get('/api/listings/saved', {
         headers: { Authorization: `Bearer ${token}` }
       })
       setListings(res.data.listings)

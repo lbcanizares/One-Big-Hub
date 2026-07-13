@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '../api'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
 
@@ -21,11 +21,11 @@ const [sort, setSort] = useState('newest')
 const fetchListings = async () => {
   setLoading(true)
   try {
-    let url = 'http://127.0.0.1:5000/api/listings/?'
+    let url = '/api/listings/?'
     if (filter) url += `type=${filter}&`
     if (category) url += `category=${category}&`
     if (sort) url += `sort=${sort}&`
-    const res = await axios.get(url)
+    const res = await api.get(url)
     setListings(res.data.listings)
   } catch (err) {
     console.error(err)

@@ -204,7 +204,7 @@ def upload_photo(listing_id):
 
         photo = ListingPhoto(
             listing_id=listing_id,
-            photo_url=f'http://127.0.0.1:5000/uploads/{filename}'
+            photo_url=f'/uploads/{filename}'
         )
         db.session.add(photo)
         db.session.commit()

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '../api'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
 
@@ -23,7 +23,7 @@ function ReviewPage() {
 
   const fetchListing = async () => {
     try {
-      const res = await axios.get(`http://127.0.0.1:5000/api/listings/${listing_id}`)
+      const res = await api.get(`/api/listings/${listing_id}`)
       setListing(res.data.listing)
     } catch (err) {
       console.error(err)
@@ -33,7 +33,7 @@ function ReviewPage() {
   const handleSubmit = async () => {
     setLoading(true)
     try {
-      await axios.post('http://127.0.0.1:5000/api/reviews/', {
+      await api.post('/api/reviews/', {
         listing_id: parseInt(listing_id),
         reviewed_user_id: parseInt(reviewedUserId),
         rating,

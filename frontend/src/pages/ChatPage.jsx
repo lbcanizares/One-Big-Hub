@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '../api'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
 
@@ -27,7 +27,7 @@ function ChatPage() {
 
   const fetchConversations = async () => {
   try {
-    const res = await axios.get('http://127.0.0.1:5000/api/chat/conversations', {
+    const res = await api.get('/api/chat/conversations', {
       headers: { Authorization: `Bearer ${token}` }
     })
     const sorted = res.data.conversations.sort((a, b) => 
@@ -43,7 +43,7 @@ function ChatPage() {
 
   const fetchMessages = async () => {
     try {
-      const res = await axios.get(`http://127.0.0.1:5000/api/chat/conversations/${id}/messages`, {
+      const res = await api.get(`/api/chat/conversations/${id}/messages`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       setMessages(res.data.messages)
@@ -56,8 +56,8 @@ function ChatPage() {
     e.preventDefault()
     if (!newMessage.trim()) return
     try {
-      await axios.post(
-        `http://127.0.0.1:5000/api/chat/conversations/${id}/messages`,
+      await api.post(
+        `/api/chat/conversations/${id}/messages`,
         { content: newMessage },
         { headers: { Authorization: `Bearer ${token}` } }
       )
@@ -70,7 +70,7 @@ function ChatPage() {
 
   const respondOffer = async (offerId, status) => {
     try {
-      await axios.put(`http://127.0.0.1:5000/api/offers/${offerId}/respond`,
+      await api.put(`/api/offers/${offerId}/respond`,
         { status },
         { headers: { Authorization: `Bearer ${token}` } }
       )

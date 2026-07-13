@@ -94,7 +94,7 @@ def update_profile_photo():
     filename = secure_filename(f"profile_{user_id}_{file.filename}")
     os.makedirs('uploads', exist_ok=True)
     file.save(os.path.join('uploads', filename))
-    user.profile_photo = f'http://127.0.0.1:5000/uploads/{filename}'
+    user.profile_photo = f'/uploads/{filename}'
     db.session.commit()
 
     return jsonify({

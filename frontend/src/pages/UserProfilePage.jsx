@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '../api'
 import Navbar from '../components/Navbar'
 
 function UserProfilePage() {
@@ -17,7 +17,7 @@ function UserProfilePage() {
 
   const fetchProfile = async () => {
     try {
-      const res = await axios.get(`http://127.0.0.1:5000/api/auth/user/${id}`)
+      const res = await api.get(`/api/auth/user/${id}`)
       setProfile(res.data.user)
     } catch (err) {
       console.error(err)
@@ -26,7 +26,7 @@ function UserProfilePage() {
 
   const fetchListings = async () => {
     try {
-      const res = await axios.get('http://127.0.0.1:5000/api/listings/')
+      const res = await api.get('/api/listings/')
       const userListings = res.data.listings.filter(l => l.seller.id === parseInt(id))
       setListings(userListings)
     } catch (err) {

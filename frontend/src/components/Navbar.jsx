@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import api from '../api'
 
 function Navbar() {
   const { user, token, logout } = useAuth()
@@ -10,7 +10,7 @@ function Navbar() {
 useEffect(() => {
   if (!user) return
   const fetchUnread = () => {
-    axios.get('http://127.0.0.1:5000/api/chat/unread-count', {
+    api.get('/api/chat/unread-count', {
       headers: { Authorization: `Bearer ${token}` }
     }).then(res => setUnreadCount(res.data.unread_count)).catch(() => {})
   }

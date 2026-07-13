@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '../api'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
 
@@ -49,15 +49,15 @@ function PostListingPage() {
       ...form,
       price: form.price === '' ? null : form.price,
     }
-    const res = await axios.post('http://127.0.0.1:5000/api/listings/', cleanForm, {
+    const res = await api.post('/api/listings/', cleanForm, {
       headers: { Authorization: `Bearer ${token}` }
     })
     for (const photo of photos) {
       if (photo) {
         const formData = new FormData()
         formData.append('photo', photo)
-        await axios.post(
-          `http://127.0.0.1:5000/api/listings/${res.data.id}/photos`,
+        await api.post(
+          `/api/listings/${res.data.id}/photos`,
           formData,
           { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
         )

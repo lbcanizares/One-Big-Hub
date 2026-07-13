@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '../api'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
 
@@ -20,7 +20,7 @@ function ProfilePage() {
 
 const fetchProfile = async () => {
   try {
-    const res = await axios.get('http://127.0.0.1:5000/api/auth/me', {
+    const res = await api.get('/api/auth/me', {
       headers: { Authorization: `Bearer ${token}` }
     })
     updateUser(res.data.user)
@@ -37,7 +37,7 @@ useEffect(() => {
 
 const fetchReviews = async () => {
   try {
-    const res = await axios.get(`http://127.0.0.1:5000/api/reviews/user/${user.id}`)
+    const res = await api.get(`/api/reviews/user/${user.id}`)
     setReviews(res.data.reviews)
   } catch (err) {
     console.error(err)
@@ -51,7 +51,7 @@ const fetchReviews = async () => {
 
   const fetchMyListings = async () => {
   try {
-    const res = await axios.get('http://127.0.0.1:5000/api/listings/my', {
+    const res = await api.get('/api/listings/my', {
       headers: { Authorization: `Bearer ${token}` }
     })
     setListings(res.data.listings)
@@ -65,7 +65,7 @@ const fetchReviews = async () => {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this listing?')) return
     try {
-      await axios.delete(`http://127.0.0.1:5000/api/listings/${id}`, {
+      await api.delete(`/api/listings/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       setListings(listings.filter(l => l.id !== id))
@@ -78,7 +78,7 @@ const fetchReviews = async () => {
   const confirmed = window.confirm(`Mark "${listing.title}" as sold?`)
   if (!confirmed) return
   try {
-    await axios.put(`http://127.0.0.1:5000/api/listings/${listing.id}`,
+    await api.put(`/api/listings/${listing.id}`,
       { status: 'Sold' },
       { headers: { Authorization: `Bearer ${token}` } }
     )

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '../api'
 
 
 function RegisterPage() {
@@ -27,7 +27,7 @@ function RegisterPage() {
       return setError('Passwords do not match')
     setLoading(true)
     try {
-      await axios.post('http://127.0.0.1:5000/api/auth/register', {
+      await api.post('/api/auth/register', {
         name: form.name,
         email: form.email,
         password: form.password,
