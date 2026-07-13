@@ -9,7 +9,13 @@ import models
 
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:root@localhost:3306/adnu_marketplace'
+app.config['SQLALCHEMY_DATABASE_URI'] = (
+    f"mysql+pymysql://{os.environ.get('MYSQL_USER', 'root')}:"
+    f"{os.environ.get('MYSQL_PASSWORD', 'root')}@"
+    f"{os.environ.get('MYSQL_HOST', 'localhost')}:"
+    f"{os.environ.get('MYSQL_PORT', '3306')}/"
+    f"{os.environ.get('MYSQL_DATABASE', 'adnu_marketplace')}" 
+)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = 'onebighub-secret-key-2026'
 app.config['UPLOAD_FOLDER'] = 'uploads'
