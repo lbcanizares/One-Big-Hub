@@ -18,7 +18,8 @@ function LoginPage() {
     setLoading(true)
     try {
       const res = await api.post('/api/auth/login', form)
-      navigate('/')
+      login(res.data.user, res.data.token
+       navigate('/')
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed')
     } finally {
