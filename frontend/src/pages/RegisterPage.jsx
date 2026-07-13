@@ -6,6 +6,7 @@ import api from '../api'
 function RegisterPage() {
   const navigate = useNavigate()
   const [avatarPreview, setAvatarPreview] = useState(null)
+  const [avatarFile, setAvatarFile] = useState(null)
   const [form, setForm] = useState({
     name: '',
     email: '',
