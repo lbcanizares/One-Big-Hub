@@ -3,6 +3,7 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 from werkzeug.security import generate_password_hash, check_password_hash
 from extensions import db
 from models import User
+from flask import request
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -94,7 +95,7 @@ def update_profile_photo():
     filename = secure_filename(f"profile_{user_id}_{file.filename}")
     os.makedirs('uploads', exist_ok=True)
     file.save(os.path.join('uploads', filename))
-    user.profile_photo = f'/uploads/{filename}'
+    user.profile_photo = f'{request.host_url.rstrip("/")}/uploads/{filename}'
     db.session.commit()
 
     return jsonify({
