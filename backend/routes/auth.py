@@ -90,12 +90,10 @@ def update_profile_photo():
         return jsonify({"status": "error", "message": "No photo"}), 400
 
     file = request.files['photo']
-    from werkzeug.utils import secure_filename
-    import os
-    filename = secure_filename(f"profile_{user_id}_{file.filename}")
-    os.makedirs('uploads', exist_ok=True)
-    file.save(os.path.join('uploads', filename))
-    user.profile_photo = f'{request.host_url.rstrip("/")}/uploads/{filename}'
+
+    import cloudinary.uploader
+    upload_result = cloudinary.uploader.upload(file, folder="onebighub/avatars")
+    user.profile_photo = upload_result['secure_url']
     db.session.commit()
 
     return jsonify({

@@ -198,13 +198,12 @@ def upload_photo(listing_id):
 
     file = request.files['photo']
     if file and allowed_file(file.filename):
-        filename = secure_filename(f"{listing_id}_{file.filename}")
-        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-        file.save(os.path.join(UPLOAD_FOLDER, filename))
+        import cloudinary.uploader
+        upload_result = cloudinary.uploader.upload(file, folder="onebighub/listings")
 
         photo = ListingPhoto(
             listing_id=listing_id,
-            photo_url=f'{request.host_url.rstrip("/")}/uploads/{filename}'
+            photo_url=upload_result['secure_url']
         )
         db.session.add(photo)
         db.session.commit()
@@ -212,7 +211,6 @@ def upload_photo(listing_id):
         return jsonify({"status": "success", "photo_url": photo.photo_url}), 201
 
     return jsonify({"status": "error", "message": "Invalid file type"}), 400
-
 
 @listings_bp.route('/uploads/<filename>')
 def serve_upload(filename):

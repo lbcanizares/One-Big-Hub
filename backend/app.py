@@ -6,8 +6,16 @@ from datetime import timedelta
 from flask import send_from_directory
 import os
 import models
+import cloudinary
+import cloudinary.uploader
 
 app = Flask(__name__)
+
+cloudinary.config(
+    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.environ.get('CLOUDINARY_API_KEY'),
+    api_secret=os.environ.get('CLOUDINARY_API_SECRET')
+)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = (
     f"mysql+pymysql://{os.environ.get('MYSQL_USER', 'root')}:"
